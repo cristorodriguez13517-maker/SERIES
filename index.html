@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Netflix Smart TV - FINAL</title>
+
+<style>
+* { box-sizing:border-box; }
+body { margin:0; background:#000; color:#fff; font-family:Arial,sans-serif; overflow-x:hidden; }
+
+/* HEADER */
+.header {
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:320px;
+  background-size:cover;
+  background-position:center;
+  display:flex;
+  align-items:center;
+  padding:20px;
+  z-index:10;
+}
+
+.header::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.9) 40%, transparent 100%),
+    linear-gradient(to bottom, transparent 20%, #000 100%);
+}
+
+.header-info {
+  position:relative;
+  z-index:2;
+  max-width:470px;
+  opacity:0;
+  transition:0.3s;
+}
+
+.header-info.visible { opacity:1; }
+
+.header h1 img {
+  max-width:300px;
+  max-height:80px;
+}
+
+/* META Y OVERVIEW */
+.details { 
+  font-size:15px; 
+  font-weight:bold; 
+  margin:8px 0;
+}
+
+.overview { 
+  font-size:12px; 
+  line-height:1.4; 
+  max-width:450px;
+}
+
+/* FILAS */
+.content {
+  padding:20px;
+  margin-top:320px;
+}
+.movie-row {
+  display:grid;
+  grid-template-columns:repeat(8,105px);
+  gap:12px;
+  margin-top:20px;
+}
+.movie-row.hidden { display:none; }
+
+/* PELIS */
+.movie {
+  cursor:pointer;
+  outline:none;
+}
+.movie img {
+  width:105px;
+  height:160px;
+  object-fit:cover;
+}
+
+.movie:hover,
+.movie:focus {
+  transform:scale(1.1);
+  z-index:10;
+}
+
+.movie.selected img {
+  border:3px solid #E50914;
+}
+
+/* BUSCADOR */
+.search-container { 
+  position:fixed; 
+  top:20px; 
+  right:30px; 
+  display:flex; 
+  align-items:center; 
+  gap:10px; 
+  z-index:50; 
+}
+
+.search-button { 
+  background:none; 
+  border:none; 
+  cursor:pointer; 
+  display:flex; 
+  align-items:center; 
+  justify-content:center; 
+  outline:none; 
+  transition: transform .2s; 
+}
+
+.search-button svg { 
+  width:24px; 
+  height:24px; 
+  fill:white; 
+}
+
+.search-button:hover { 
+  transform: scale(1.2); 
+}
+
+.search-input {
+  width:0; 
+  padding:8px 12px; 
+  border-radius:20px; 
+  border:1px solid rgba(255,255,255,0.5);
+  background:rgba(0,0,0,0.5); 
+  color:#fff; 
+  outline:none; 
+  opacity:0; 
+  transition:width 0.2s, opacity 0.2s, transform 0.2s;
+}
+
+.search-input.active, 
+.search-input:focus { 
+  width:220px; 
+  opacity:1; 
+  transform: scale(1.05); 
+}
+</style>
+</head>
+
+<body>
+
+<!-- BUSCADOR -->
+<div class="search-container">
+  <button class="search-button" id="search-button">
+    <svg viewBox="0 0 24 24">
+      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C8.01 14 6 11.99 6 9.5S8.01 5 10.5 5 15 7.01 15 9.5 12.99 14 10.5 14z"></path>
+    </svg>
+  </button>
+  <input type="text" id="search" class="search-input" placeholder="Buscar...">
+</div>
+
+<!-- HEADER -->
+<div class="header" id="header">
+  <div class="header-info" id="info">
+    <h1 id="title"></h1>
+    <div id="meta" class="details"></div>
+    <p id="overview" class="overview"></p>
+  </div>
+</div>
+
+<!-- CONTENIDO -->
+<div class="content">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+
+<script>
+const movies = document.querySelectorAll('.movie');
+const rows = document.querySelectorAll('.movie-row');
+
+const header = document.getElementById('header');
+const info = document.getElementById('info');
+const title = document.getElementById('title');
+const meta = document.getElementById('meta');
+const overview = document.getElementById('overview');
+
+const searchInput = document.getElementById('search');
+const searchButton = document.getElementById('search-button');
+
+let activeRow = 0;
+
+/* INICIO */
+rows.forEach((r,i)=>{ if(i!==0) r.classList.add('hidden'); });
+
+function showRow(i){
+  rows.forEach((r,index)=>{
+    r.classList.toggle('hidden', index!==i);
+  });
+  activeRow = i;
+}
+
+function selectMovie(movie){
+  movies.forEach(m=>m.classList.remove('selected'));
+  movie.classList.add('selected');
+
+  header.style.backgroundImage = `url(${movie.dataset.banner})`;
+
+  if(movie.dataset.logo){
+    title.innerHTML = `<img src="${movie.dataset.logo}">`;
+  } else {
+    title.textContent = movie.dataset.title;
+  }
+
+  meta.textContent = movie.dataset.meta;
+  overview.textContent = movie.dataset.overview;
+
+  info.classList.add('visible');
+}
+
+/* EVENTOS */
+rows.forEach((row,rowIndex)=>{
+  row.querySelectorAll('.movie').forEach(movie=>{
+    movie.addEventListener('focus', ()=>{
+      showRow(rowIndex);
+      selectMovie(movie);
+    });
+
+    movie.addEventListener('mouseenter', ()=>{
+      showRow(rowIndex);
+      selectMovie(movie);
+    });
+  });
+});
+
+/* FLECHAS */
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowDown' && activeRow<rows.length-1){
+    showRow(activeRow+1);
+    rows[activeRow].querySelector('.movie')?.focus();
+  }
+
+  if(e.key==='ArrowUp' && activeRow>0){
+    showRow(activeRow-1);
+    rows[activeRow].querySelector('.movie')?.focus();
+  }
+});
+
+/* BUSCADOR */
+searchButton.addEventListener('click', ()=>{
+  searchInput.classList.add('active');
+  searchInput.focus();
+});
+
+searchInput.addEventListener('blur', ()=>{
+  if(!searchInput.value){
+    searchInput.classList.remove('active');
+
+    rows.forEach((row,i)=>{
+      row.style.display='';
+      row.classList.toggle('hidden', i!==0);
+
+      row.querySelectorAll('.movie').forEach(m=>{
+        m.style.display='';
+      });
+    });
+
+    activeRow=0;
+    rows[0].querySelector('.movie')?.focus();
+  }
+});
+
+searchInput.addEventListener('input', ()=>{
+  const query = searchInput.value.toLowerCase().trim();
+  let firstMatch=null;
+
+  rows.forEach((row,rowIndex)=>{
+    let visible=false;
+
+    row.querySelectorAll('.movie').forEach(movie=>{
+      const title = movie.dataset.title.toLowerCase();
+      const match = title.includes(query);
+
+      movie.style.display = match?'block':'none';
+
+      if(match){
+        visible=true;
+        if(!firstMatch){
+          firstMatch=movie;
+          showRow(rowIndex);
+        }
+      }
+    });
+
+    row.style.display = visible?'grid':'none';
+  });
+
+  if(!query){
+    rows.forEach((row,i)=>{
+      row.style.display='';
+      row.querySelectorAll('.movie').forEach(m=>m.style.display='');
+    });
+    showRow(0);
+  }
+});
+
+/* 🔥 INICIO CON PRIMERA PELÍCULA */
+const firstMovie = rows[0].querySelector('.movie');
+if(firstMovie){
+  firstMovie.focus();
+  selectMovie(firstMovie);
+}
+</script>
+
+</body>
+</html>
