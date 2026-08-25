@@ -3,330 +3,264 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Netflix Smart TV - FINAL</title>
+<title>Netflix Smart TV - Series</title>
 
 <style>
-* { box-sizing:border-box; }
+* { box-sizing: border-box; }
 body { margin:0; background:#000; color:#fff; font-family:Arial,sans-serif; overflow-x:hidden; }
 
-/* HEADER */
-.header {
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:320px;
-  background-size:cover;
-  background-position:center;
-  display:flex;
-  align-items:center;
-  padding:20px;
-  z-index:10;
-}
-
-.header::before {
-  content:"";
-  position:absolute;
-  inset:0;
-  background:
-    linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.9) 40%, transparent 100%),
-    linear-gradient(to bottom, transparent 20%, #000 100%);
-}
-
-.header-info {
-  position:relative;
-  z-index:2;
-  max-width:470px;
-  opacity:0;
-  transition:0.3s;
-}
-
-.header-info.visible { opacity:1; }
-
-.header h1 img {
-  max-width:300px;
-  max-height:80px;
-}
-
-/* META Y OVERVIEW */
-.details { 
-  font-size:15px; 
-  font-weight:bold; 
-  margin:8px 0;
-}
-
-.overview { 
-  font-size:12px; 
-  line-height:1.4; 
-  max-width:450px;
-}
-
-/* FILAS */
-.content {
-  padding:20px;
-  margin-top:320px;
-}
-.movie-row {
-  display:grid;
-  grid-template-columns:repeat(8,105px);
-  gap:12px;
-  margin-top:20px;
-}
-.movie-row.hidden { display:none; }
-
-/* PELIS */
-.movie {
-  cursor:pointer;
-  outline:none;
-}
-.movie img {
-  width:105px;
-  height:160px;
-  object-fit:cover;
-}
-
-.movie:hover,
-.movie:focus {
-  transform:scale(1.1);
-  z-index:10;
-}
-
-.movie.selected img {
-  border:3px solid #E50914;
-}
-
-/* BUSCADOR */
-.search-container { 
-  position:fixed; 
-  top:20px; 
-  right:30px; 
+.header { 
+  position: relative; 
+  width: 100%; 
+  height: 320px; 
+  background-size: cover; 
+  background-position: center; 
   display:flex; 
   align-items:center; 
-  gap:10px; 
-  z-index:50; 
+  padding:20px; 
+  overflow:hidden; 
+  z-index:1; 
+  transition: background-image 0.8s ease-in-out; 
+}
+.header::before { 
+  content:""; 
+  position:absolute; 
+  inset:0; 
+  background: linear-gradient(to right, rgba(0,0,0,0.89) 0%, rgba(0,0,0,0) 40%), 
+              linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,1) 100%); 
+  z-index:1; 
+}
+.header.active::before { 
+  background: linear-gradient(to right, rgba(0,0,0,0.89) 0%, rgba(0,0,0,0.89) 40%, rgba(0,0,0,0) 100%), 
+              linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,1) 100%); 
 }
 
-.search-button { 
-  background:none; 
-  border:none; 
-  cursor:pointer; 
-  display:flex; 
-  align-items:center; 
-  justify-content:center; 
-  outline:none; 
-  transition: transform .2s; 
-}
-
-.search-button svg { 
-  width:24px; 
-  height:24px; 
-  fill:white; 
-}
-
-.search-button:hover { 
-  transform: scale(1.2); 
-}
-
-.search-input {
-  width:0; 
-  padding:8px 12px; 
-  border-radius:20px; 
-  border:1px solid rgba(255,255,255,0.5);
-  background:rgba(0,0,0,0.5); 
-  color:#fff; 
-  outline:none; 
+.header-info-container { 
+  position: relative; 
+  z-index:2; 
+  max-width:470px; 
   opacity:0; 
-  transition:width 0.2s, opacity 0.2s, transform 0.2s;
+  transition:opacity 0.3s; 
 }
+.header-info-container.visible { opacity:1; }
 
-.search-input.active, 
-.search-input:focus { 
-  width:220px; 
-  opacity:1; 
-  transform: scale(1.05); 
-}
+.header-info img { max-width:300px; max-height:80px; display:block; margin-bottom:5px; }
+.header-info h1 { margin:0; font-size:32px; }
+.header-info .details { font-size:14px; font-weight:bold; margin:4px 0; }
+.header-info .overview { font-size:12px; max-height:200px; overflow:auto; }
+
+.content { padding:20px; }
+.series-container { display:block; }
+
+.season-row { display:none; margin-bottom:25px; }
+.season-title { font-size:18px; margin-bottom:10px; }
+
+.episodes-list { display:flex; gap:12px; overflow-x:auto; scroll-behavior:smooth; }
+.episode-thumb { position: relative; flex:0 0 auto; width:220px; cursor:pointer; border-radius:4px; overflow:hidden; border:3px solid transparent; transition: transform 0.3s ease, border 0.2s ease; }
+.episode-thumb img { width:100%; height:124px; object-fit:cover; display:block; border-radius:4px; }
+.episode-thumb.selected { border:3px solid #E50914; }
+
+
 </style>
 </head>
 
 <body>
 
-<!-- BUSCADOR -->
-<div class="search-container">
-  <button class="search-button" id="search-button">
-    <svg viewBox="0 0 24 24">
-      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C8.01 14 6 11.99 6 9.5S8.01 5 10.5 5 15 7.01 15 9.5 12.99 14 10.5 14z"></path>
-    </svg>
-  </button>
-  <input type="text" id="search" class="search-input" placeholder="Buscar...">
-</div>
-
-<!-- HEADER -->
 <div class="header" id="header">
-  <div class="header-info" id="info">
-    <h1 id="title"></h1>
-    <div id="meta" class="details"></div>
-    <p id="overview" class="overview"></p>
+  <div class="header-info-container" id="header-info-container">
+    <div class="header-info" id="header-info"></div>
   </div>
 </div>
 
-<!-- CONTENIDO -->
 <div class="content">
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  <div class="series-container" id="series-container"></div>
 </div>
 
 <script>
-const movies = document.querySelectorAll('.movie');
-const rows = document.querySelectorAll('.movie-row');
+const apiKey = 'd37846975ba7a3ed227604f30b0f9c16';
+const language = 'es-ES';
 
 const header = document.getElementById('header');
-const info = document.getElementById('info');
-const title = document.getElementById('title');
-const meta = document.getElementById('meta');
-const overview = document.getElementById('overview');
+const headerInfoContainer = document.getElementById('header-info-container');
+const headerInfo = document.getElementById('header-info');
+const container = document.getElementById('series-container');
 
-const searchInput = document.getElementById('search');
-const searchButton = document.getElementById('search-button');
+let seasonRows = [];
+let episodesBySeason = [];
+let episodesData = [];
 
-let activeRow = 0;
+let currentSeasonIndex = 0;
+let currentEpisodeIndex = 0;
 
-/* INICIO */
-rows.forEach((r,i)=>{ if(i!==0) r.classList.add('hidden'); });
+let tvId = null;
+let totalSeasons = 0;
 
-function showRow(i){
-  rows.forEach((r,index)=>{
-    r.classList.toggle('hidden', index!==i);
-  });
-  activeRow = i;
+let seriesDetails = null;
+
+// 🔥 CACHE
+const seasonCache = {};
+
+async function fetchJSON(url){
+  const res = await fetch(url);
+  return await res.json();
 }
 
-function selectMovie(movie){
-  movies.forEach(m=>m.classList.remove('selected'));
-  movie.classList.add('selected');
+async function load(){
+  const search = await fetchJSON(
+    `https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&language=${language}&query=miercoles`
+  );
 
-  header.style.backgroundImage = `url(${movie.dataset.banner})`;
+  tvId = search.results[0].id;
 
-  if(movie.dataset.logo){
-    title.innerHTML = `<img src="${movie.dataset.logo}">`;
-  } else {
-    title.textContent = movie.dataset.title;
-  }
+  const details = await fetchJSON(
+    `https://api.themoviedb.org/3/tv/${tvId}?api_key=${apiKey}&language=${language}&append_to_response=images`
+  );
 
-  meta.textContent = movie.dataset.meta;
-  overview.textContent = movie.dataset.overview;
+  seriesDetails = details;
+  totalSeasons = details.number_of_seasons;
 
-  info.classList.add('visible');
+  header.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${details.backdrop_path}')`;
+  header.classList.add('active');
+  headerInfoContainer.classList.add('visible');
+
+  const logo = (details.images.logos || []).find(l=>l.iso_639_1==='es') || details.images.logos?.[0];
+
+  headerInfo.innerHTML = `
+    ${logo ? `<img src="https://image.tmdb.org/t/p/original${logo.file_path}">` : `<h1>${details.name}</h1>`}
+    <div class="details">Serie | ${details.first_air_date?.split('-')[0] || ''} | ${totalSeasons} temporadas</div>
+    <p class="overview">${details.overview || ''}</p>
+  `;
+
+  await loadSeason(1);
+
+  seasonRows[0].style.display = 'block';
+  updateSelection();
 }
 
-/* EVENTOS */
-rows.forEach((row,rowIndex)=>{
-  row.querySelectorAll('.movie').forEach(movie=>{
-    movie.addEventListener('focus', ()=>{
-      showRow(rowIndex);
-      selectMovie(movie);
-    });
+// 🔥 Lazy load temporadas
+async function loadSeason(seasonNumber){
+  if(seasonCache[seasonNumber]) return;
 
-    movie.addEventListener('mouseenter', ()=>{
-      showRow(rowIndex);
-      selectMovie(movie);
-    });
-  });
-});
+  const season = await fetchJSON(
+    `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${apiKey}&language=${language}`
+  );
 
-/* FLECHAS */
-document.addEventListener('keydown', e=>{
-  if(e.key==='ArrowDown' && activeRow<rows.length-1){
-    showRow(activeRow+1);
-    rows[activeRow].querySelector('.movie')?.focus();
-  }
+  seasonCache[seasonNumber] = season;
 
-  if(e.key==='ArrowUp' && activeRow>0){
-    showRow(activeRow-1);
-    rows[activeRow].querySelector('.movie')?.focus();
-  }
-});
+  const row = document.createElement('div');
+  row.className = 'season-row';
 
-/* BUSCADOR */
-searchButton.addEventListener('click', ()=>{
-  searchInput.classList.add('active');
-  searchInput.focus();
-});
+  const title = document.createElement('div');
+  title.className = 'season-title';
+  title.textContent = `Temporada ${seasonNumber}`;
 
-searchInput.addEventListener('blur', ()=>{
-  if(!searchInput.value){
-    searchInput.classList.remove('active');
+  const list = document.createElement('div');
+  list.className = 'episodes-list';
 
-    rows.forEach((row,i)=>{
-      row.style.display='';
-      row.classList.toggle('hidden', i!==0);
+  let thumbs = [];
+  let epsData = [];
 
-      row.querySelectorAll('.movie').forEach(m=>{
-        m.style.display='';
-      });
-    });
+  season.episodes.forEach(ep=>{
+    const div = document.createElement('div');
+    div.className = 'episode-thumb';
 
-    activeRow=0;
-    rows[0].querySelector('.movie')?.focus();
-  }
-});
+    div.innerHTML = `
+      <img src="https://image.tmdb.org/t/p/w500${ep.still_path}">
+      
+    `;
 
-searchInput.addEventListener('input', ()=>{
-  const query = searchInput.value.toLowerCase().trim();
-  let firstMatch=null;
+    list.appendChild(div);
 
-  rows.forEach((row,rowIndex)=>{
-    let visible=false;
-
-    row.querySelectorAll('.movie').forEach(movie=>{
-      const title = movie.dataset.title.toLowerCase();
-      const match = title.includes(query);
-
-      movie.style.display = match?'block':'none';
-
-      if(match){
-        visible=true;
-        if(!firstMatch){
-          firstMatch=movie;
-          showRow(rowIndex);
-        }
-      }
-    });
-
-    row.style.display = visible?'grid':'none';
+    thumbs.push(div);
+    epsData.push(ep);
   });
 
-  if(!query){
-    rows.forEach((row,i)=>{
-      row.style.display='';
-      row.querySelectorAll('.movie').forEach(m=>m.style.display='');
-    });
-    showRow(0);
-  }
-});
+  row.appendChild(title);
+  row.appendChild(list);
+  container.appendChild(row);
 
-/* 🔥 INICIO CON PRIMERA PELÍCULA */
-const firstMovie = rows[0].querySelector('.movie');
-if(firstMovie){
-  firstMovie.focus();
-  selectMovie(firstMovie);
+  seasonRows.push(row);
+  episodesBySeason.push(thumbs);
+  episodesData.push(epsData);
 }
+
+// 🔥 HEADER con formato T1 - E01
+function updateHeader(ep){
+  if(!ep || !seriesDetails) return;
+
+  const logo = (seriesDetails.images.logos || []).find(l=>l.iso_639_1==='es') || seriesDetails.images.logos?.[0];
+
+  const seasonNum = currentSeasonIndex + 1;
+  const episodeNum = ep.episode_number;
+
+  const formatted = `T${seasonNum} - E${String(episodeNum).padStart(2,'0')}`;
+
+  headerInfo.innerHTML = `
+    ${logo ? `<img src="https://image.tmdb.org/t/p/original${logo.file_path}">` : `<h1>${seriesDetails.name}</h1>`}
+    <div class="details">${formatted} - ${ep.name}</div>
+    <p class="overview">${ep.overview || 'Sin sinopsis disponible'}</p>
+  `;
+}
+
+function updateSelection(){
+  episodesBySeason.forEach(s=>s.forEach(e=>e.classList.remove('selected')));
+
+  const current = episodesBySeason[currentSeasonIndex];
+  const data = episodesData[currentSeasonIndex];
+
+  if(!current || !data) return;
+
+  const ep = current[currentEpisodeIndex];
+  const epData = data[currentEpisodeIndex];
+
+  if(ep){
+    ep.classList.add('selected');
+    ep.scrollIntoView({behavior:'smooth', inline:'center'});
+  }
+
+  updateHeader(epData);
+}
+
+// 🎮 CONTROLES TV
+document.addEventListener('keydown', async (e)=>{
+
+  const current = episodesBySeason[currentSeasonIndex];
+  if(!current) return;
+
+  if(e.key==='ArrowRight'){
+    if(currentEpisodeIndex < current.length-1) currentEpisodeIndex++;
+  }
+
+  if(e.key==='ArrowLeft'){
+    if(currentEpisodeIndex > 0) currentEpisodeIndex--;
+  }
+
+  if(e.key==='ArrowDown'){
+    if(currentSeasonIndex < totalSeasons-1){
+      currentSeasonIndex++;
+      currentEpisodeIndex = 0;
+
+      await loadSeason(currentSeasonIndex + 1);
+
+      seasonRows.forEach(r=>r.style.display='none');
+      seasonRows[currentSeasonIndex].style.display='block';
+    }
+  }
+
+  if(e.key==='ArrowUp'){
+    if(currentSeasonIndex > 0){
+      currentSeasonIndex--;
+      currentEpisodeIndex = 0;
+
+      seasonRows.forEach(r=>r.style.display='none');
+      seasonRows[currentSeasonIndex].style.display='block';
+    }
+  }
+
+  updateSelection();
+});
+
+window.onload = load;
 </script>
 
 </body>
