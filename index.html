@@ -254,7 +254,7 @@ body {
 
   cursor: pointer;
 
-  touch-action: manipulation;
+  touch-action: none;
 
   border-radius: 4px;
 
@@ -971,36 +971,64 @@ function crearTemporada(
       /* -----------------------------------------------
          CLIC / TÃCTIL
 
-         Toque corto:
-         - selecciona
-         - abre el capÃ­tulo
+         MÃ“VIL / TABLET:
+         - Toque corto: selecciona y abre
+         - PulsaciÃ³n larga: selecciona y NO abre
+         - Otro toque: abre
 
-         PulsaciÃ³n larga:
-         - selecciona
-         - NO abre el capÃ­tulo
+         PC:
+         - Click: selecciona y abre
       ----------------------------------------------- */
 
-      let pulsacionLarga = false;
-      let temporizadorPulsacion = null;
+      let touchTimer = null;
+      let touchIsLong = false;
+      let touchMoved = false;
+      let ignoreNextClick = false;
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+
+      /* ===================================================
+         INICIO DEL TOQUE
+      =================================================== */
 
       elemento.addEventListener(
-        "pointerdown",
+        "touchstart",
         (evento) => {
 
-          /* Solo botÃ³n principal / toque */
           if (
-            evento.pointerType === "mouse" &&
-            evento.button !== 0
+            !evento.touches ||
+            evento.touches.length !== 1
           ) {
             return;
           }
 
-          pulsacionLarga = false;
+          const touch =
+            evento.touches[0];
 
-          temporizadorPulsacion =
+          touchStartX =
+            touch.clientX;
+
+          touchStartY =
+            touch.clientY;
+
+          touchIsLong = false;
+          touchMoved = false;
+
+
+          touchTimer =
             setTimeout(() => {
 
-              pulsacionLarga = true;
+              if (touchMoved) {
+                return;
+              }
+
+              touchIsLong = true;
+
+              /*
+                 SELECCIONAR EL CAPÃTULO
+                 SIN ABRIRLO
+              */
 
               currentSeasonIndex =
                 seasonIndex;
@@ -1012,66 +1040,113 @@ function crearTemporada(
 
             }, 600);
 
-        }
+        },
+        { passive: true }
       );
 
 
-      elemento.addEventListener(
-        "pointerup",
-        () => {
-
-          if (temporizadorPulsacion) {
-
-            clearTimeout(
-              temporizadorPulsacion
-            );
-
-            temporizadorPulsacion = null;
-
-          }
-
-        }
-      );
-
+      /* ===================================================
+         DETECTAR SI EL DEDO SE ESTÃ MOVIENDO
+      =================================================== */
 
       elemento.addEventListener(
-        "pointercancel",
-        () => {
-
-          if (temporizadorPulsacion) {
-
-            clearTimeout(
-              temporizadorPulsacion
-            );
-
-            temporizadorPulsacion = null;
-
-          }
-
-        }
-      );
-
-
-      elemento.addEventListener(
-        "click",
+        "touchmove",
         (evento) => {
 
+          if (
+            !evento.touches ||
+            evento.touches.length !== 1
+          ) {
+            return;
+          }
+
+          const touch =
+            evento.touches[0];
+
+          const dx =
+            touch.clientX -
+            touchStartX;
+
+          const dy =
+            touch.clientY -
+            touchStartY;
+
+          if (
+            Math.abs(dx) > 15 ||
+            Math.abs(dy) > 15
+          ) {
+
+            touchMoved = true;
+
+            if (touchTimer) {
+
+              clearTimeout(
+                touchTimer
+              );
+
+              touchTimer = null;
+
+            }
+
+          }
+
+        },
+        { passive: true }
+      );
+
+
+      /* ===================================================
+         FIN DEL TOQUE
+      =================================================== */
+
+      elemento.addEventListener(
+        "touchend",
+        (evento) => {
+
+          if (touchTimer) {
+
+            clearTimeout(
+              touchTimer
+            );
+
+            touchTimer = null;
+
+          }
+
+
           /*
-             Si fue una pulsaciÃ³n larga,
-             el click generado por el navegador
-             NO debe abrir el capÃ­tulo.
+             SI FUE PULSACIÃ“N LARGA:
+             ya hemos seleccionado el capÃ­tulo.
+             NO hacemos nada mÃ¡s.
           */
 
-          if (pulsacionLarga) {
+          if (touchIsLong) {
 
-            evento.preventDefault();
-
-            pulsacionLarga = false;
+            ignoreNextClick = true;
 
             return;
 
           }
 
+
+          /*
+             SI HUBO MOVIMIENTO:
+             era un gesto/scroll, no un click.
+          */
+
+          if (touchMoved) {
+
+            ignoreNextClick = true;
+
+            return;
+
+          }
+
+
+          /*
+             TOQUE CORTO:
+             seleccionar y abrir.
+          */
 
           currentSeasonIndex =
             seasonIndex;
@@ -1082,6 +1157,76 @@ function crearTemporada(
           actualizarSeleccion();
 
           abrirCapitulo(capitulo);
+
+        },
+        { passive: true }
+      );
+
+
+      /* ===================================================
+         CLICK DE RATÃ“N / CLICK GENERADO POR EL NAVEGADOR
+      =================================================== */
+
+      elemento.addEventListener(
+        "click",
+        (evento) => {
+
+          /*
+             El navegador puede generar un click
+             despuÃ©s de un touchend.
+
+             Si fue una pulsaciÃ³n larga o un gesto,
+             lo bloqueamos para evitar que abra.
+          */
+
+          if (ignoreNextClick) {
+
+            evento.preventDefault();
+
+            evento.stopPropagation();
+
+            ignoreNextClick = false;
+
+            return;
+
+          }
+
+
+          /*
+             Si el click viene de un ratÃ³n,
+             funciona como antes.
+          */
+
+          if (
+            evento.pointerType === "mouse" ||
+            !evento.pointerType
+          ) {
+
+            currentSeasonIndex =
+              seasonIndex;
+
+            currentEpisodeIndex =
+              episodeIndex;
+
+            actualizarSeleccion();
+
+            abrirCapitulo(capitulo);
+
+          }
+
+        }
+      );
+
+
+      /* ===================================================
+         EVITAR MENÃš CONTEXTUAL DE ESTE CAPÃTULO
+      =================================================== */
+
+      elemento.addEventListener(
+        "contextmenu",
+        (evento) => {
+
+          evento.preventDefault();
 
         }
       );
