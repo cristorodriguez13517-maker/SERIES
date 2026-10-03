@@ -1,266 +1,1726 @@
 <!DOCTYPE html>
+
 <html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1"
+
+>
+
 <title>Netflix Smart TV - Series</title>
 
+<!-- =====================================================
+     ESTILOS
+===================================================== -->
+
 <style>
-* { box-sizing: border-box; }
-body { margin:0; background:#000; color:#fff; font-family:Arial,sans-serif; overflow-x:hidden; }
 
-.header { 
-  position: relative; 
-  width: 100%; 
-  height: 320px; 
-  background-size: cover; 
-  background-position: center; 
-  display:flex; 
-  align-items:center; 
-  padding:20px; 
-  overflow:hidden; 
-  z-index:1; 
-  transition: background-image 0.8s ease-in-out; 
-}
-.header::before { 
-  content:""; 
-  position:absolute; 
-  inset:0; 
-  background: linear-gradient(to right, rgba(0,0,0,0.89) 0%, rgba(0,0,0,0) 40%), 
-              linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,1) 100%); 
-  z-index:1; 
-}
-.header.active::before { 
-  background: linear-gradient(to right, rgba(0,0,0,0.89) 0%, rgba(0,0,0,0.89) 40%, rgba(0,0,0,0) 100%), 
-              linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,1) 100%); 
+/* -------------------------------------------------------
+   GENERAL
+------------------------------------------------------- */
+
+* {
+  box-sizing: border-box;
 }
 
-.header-info-container { 
-  position: relative; 
-  z-index:2; 
-  max-width:470px; 
-  opacity:0; 
-  transition:opacity 0.3s; 
+html,
+body {
+  margin: 0;
+  padding: 0;
+
+  background: #000;
+  color: #fff;
+
+  font-family: Arial, sans-serif;
+
+  overflow-x: hidden;
 }
-.header-info-container.visible { opacity:1; }
 
-.header-info img { max-width:300px; max-height:80px; display:block; margin-bottom:5px; }
-.header-info h1 { margin:0; font-size:32px; }
-.header-info .details { font-size:14px; font-weight:bold; margin:4px 0; }
-.header-info .overview { font-size:12px; max-height:200px; overflow:auto; }
+body {
+  -webkit-tap-highlight-color: transparent;
+}
 
-.content { padding:20px; }
-.series-container { display:block; }
 
-.season-row { display:none; margin-bottom:25px; }
-.season-title { font-size:18px; margin-bottom:10px; }
+/* -------------------------------------------------------
+   BANNER
+------------------------------------------------------- */
 
-.episodes-list { display:flex; gap:12px; overflow-x:auto; scroll-behavior:smooth; }
-.episode-thumb { position: relative; flex:0 0 auto; width:220px; cursor:pointer; border-radius:4px; overflow:hidden; border:3px solid transparent; transition: transform 0.3s ease, border 0.2s ease; }
-.episode-thumb img { width:100%; height:124px; object-fit:cover; display:block; border-radius:4px; }
-.episode-thumb.selected { border:3px solid #E50914; }
+.header {
 
+  position: relative;
+
+  width: 100%;
+  height: 320px;
+
+  background-size: cover;
+  background-position: center;
+
+  display: flex;
+  align-items: center;
+
+  padding: 20px;
+
+  overflow: hidden;
+
+  z-index: 1;
+
+  transition:
+    background-image 0.8s ease-in-out;
+}
+
+
+.header::before {
+
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      to right,
+      rgba(0,0,0,0.89) 0%,
+      rgba(0,0,0,0) 40%
+    ),
+
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 20%,
+      rgba(0,0,0,1) 100%
+    );
+
+  z-index: 1;
+}
+
+
+.header.active::before {
+
+  background:
+    linear-gradient(
+      to right,
+      rgba(0,0,0,0.89) 0%,
+      rgba(0,0,0,0.89) 40%,
+      rgba(0,0,0,0) 100%
+    ),
+
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 20%,
+      rgba(0,0,0,1) 100%
+    );
+}
+
+
+/* -------------------------------------------------------
+   INFORMACIÃ“N DEL BANNER
+------------------------------------------------------- */
+
+.header-info-container {
+
+  position: relative;
+
+  z-index: 2;
+
+  max-width: 470px;
+
+  opacity: 0;
+
+  transition: opacity 0.3s;
+}
+
+
+.header-info-container.visible {
+  opacity: 1;
+}
+
+
+.header-info img {
+
+  max-width: 300px;
+  max-height: 80px;
+
+  display: block;
+
+  margin-bottom: 5px;
+}
+
+
+.header-info h1 {
+
+  margin: 0;
+
+  font-size: 32px;
+}
+
+
+.header-info .details {
+
+  font-size: 14px;
+
+  font-weight: bold;
+
+  margin: 4px 0;
+}
+
+
+.header-info .overview {
+
+  font-size: 12px;
+
+  max-height: 200px;
+
+  overflow: auto;
+}
+
+
+/* -------------------------------------------------------
+   CONTENIDO
+------------------------------------------------------- */
+
+.content {
+
+  padding: 20px;
+}
+
+
+.series-container {
+
+  display: block;
+}
+
+
+/* -------------------------------------------------------
+   TEMPORADAS
+------------------------------------------------------- */
+
+.season-row {
+
+  display: none;
+
+  margin-bottom: 25px;
+}
+
+
+.season-title {
+
+  font-size: 18px;
+
+  margin-bottom: 10px;
+}
+
+
+/* -------------------------------------------------------
+   LISTA DE CAPÃTULOS
+------------------------------------------------------- */
+
+.episodes-list {
+
+  display: flex;
+
+  gap: 12px;
+
+  overflow-x: auto;
+
+  scroll-behavior: smooth;
+
+  scrollbar-width: none;
+
+  padding-bottom: 5px;
+}
+
+
+.episodes-list::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* -------------------------------------------------------
+   MINIATURA DEL CAPÃTULO
+------------------------------------------------------- */
+
+.episode-thumb {
+
+  position: relative;
+
+  flex: 0 0 auto;
+
+  width: 220px;
+
+  cursor: pointer;
+
+  touch-action: manipulation;
+
+  border-radius: 4px;
+
+  overflow: hidden;
+
+  border: 3px solid transparent;
+
+  outline: none !important;
+
+  box-shadow: none !important;
+
+  transition:
+    transform 0.3s ease,
+    border 0.2s ease;
+}
+
+
+.episode-thumb img {
+
+  width: 100%;
+
+  height: 124px;
+
+  object-fit: cover;
+
+  display: block;
+
+  border-radius: 4px;
+}
+
+
+/* -------------------------------------------------------
+   CAPÃTULO SELECCIONADO
+------------------------------------------------------- */
+
+.episode-thumb.selected {
+
+  border: 3px solid #E50914;
+
+  outline: none !important;
+
+  box-shadow: none !important;
+
+  transform: none;
+}
+
+
+/* -------------------------------------------------------
+   QUITAR MARCO AMARILLO
+------------------------------------------------------- */
+
+*:focus,
+*:focus-visible {
+
+  outline: none !important;
+
+  box-shadow: none !important;
+}
+
+
+/* Evitar menÃº contextual al mantener pulsado
+   un capÃ­tulo en mÃ³vil/tablet */
+
+.episode-thumb,
+.episode-thumb img {
+
+  -webkit-touch-callout: none;
+
+  -webkit-user-select: none;
+
+  user-select: none;
+}
+
+
+/* -------------------------------------------------------
+   MÃ“VIL
+------------------------------------------------------- */
+
+@media (max-width: 600px) {
+
+  .header {
+
+    height: 260px;
+
+    padding: 15px;
+  }
+
+
+  .header-info-container {
+
+    max-width: 80%;
+  }
+
+
+  .header-info img {
+
+    max-width: 220px;
+
+    max-height: 65px;
+  }
+
+
+  .header-info h1 {
+
+    font-size: 26px;
+  }
+
+
+  .header-info .details {
+
+    font-size: 13px;
+  }
+
+
+  .header-info .overview {
+
+    font-size: 11px;
+
+    max-height: 100px;
+  }
+
+
+  .content {
+
+    padding: 15px;
+  }
+
+
+  .episode-thumb {
+
+    width: 180px;
+  }
+
+
+  .episode-thumb img {
+
+    height: 101px;
+  }
+
+}
 
 </style>
+
 </head>
 
 <body>
 
-<div class="header" id="header">
-  <div class="header-info-container" id="header-info-container">
-    <div class="header-info" id="header-info"></div>
+<!-- =====================================================
+     =====================================================
+     
+     1. DATOS DE LA SERIE
+     
+     =====================================================
+     ===================================================== -->
+
+<script>
+
+/*
+â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+â•‘                                                        â•‘
+â•‘                 CONFIGURACIÃ“N                         â•‘
+â•‘                                                        â•‘
+â•‘       SOLO MODIFICA LOS DATOS DE ESTA PARTE           â•‘
+â•‘                                                        â•‘
+â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+*/
+
+
+const SERIE = {
+
+
+  /* =====================================================
+     INFORMACIÃ“N GENERAL
+  ===================================================== */
+
+
+  titulo: "Mi Serie",
+
+  banner: "https://image.tmdb.org/t/p/original/iHSwvRVsRyxpX7FE7GbviaDvgGZ.jpg",
+
+  logo: "https://image.tmdb.org/t/p/w780/zxyB1cF3R8vUyB8bh5LNzqhSnUU.png",
+
+
+
+  /* =====================================================
+     TEMPORADAS
+  ===================================================== */
+
+
+  temporadas: [
+
+
+    /* ===================================================
+       TEMPORADA 1
+    =================================================== */
+
+    {
+
+      numero: 1,
+
+      capitulos: [
+
+
+        {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+
+         {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+ {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+ {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+ {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+ {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+ {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+ {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+ {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+ {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        },
+
+ {
+          numero: 1,
+
+          titulo: "Los miÃ©rcoles son tristes",
+
+          imagen: "https://image.tmdb.org/t/p/w780/vaoNDFmj7DQH7PpAy9YWgLVylPP.jpg",
+
+          descripcion:
+            "Cuando expulsan a MiÃ©rcoles por orquestar una broma deliciosamente perversa, sus padres deciden enviarla a la Academia Nunca MÃ¡s: el internado donde se enamoraron.",
+
+          url:
+            "https://youtu.be/VHtk3VREom4"
+        }
+
+      ]
+
+    },
+
+
+    /* ===================================================
+       TEMPORADA 2
+    =================================================== */
+
+    {
+
+      numero: 2,
+
+      capitulos: [
+
+
+        {
+          numero: 1,
+
+          titulo: "CapÃ­tulo 1",
+
+          imagen: "t2-capitulo1.jpg",
+
+          descripcion:
+            "DescripciÃ³n del capÃ­tulo 1 de la temporada 2.",
+
+          url:
+            "https://tusitio.com/t2-capitulo-1"
+        },
+
+
+        {
+          numero: 2,
+
+          titulo: "CapÃ­tulo 2",
+
+          imagen: "t2-capitulo2.jpg",
+
+          descripcion:
+            "DescripciÃ³n del capÃ­tulo 2 de la temporada 2.",
+
+          url:
+            "https://tusitio.com/t2-capitulo-2"
+        },
+
+
+        {
+          numero: 3,
+
+          titulo: "CapÃ­tulo 3",
+
+          imagen: "t2-capitulo3.jpg",
+
+          descripcion:
+            "DescripciÃ³n del capÃ­tulo 3 de la temporada 2.",
+
+          url:
+            "https://tusitio.com/t2-capitulo-3"
+        }
+
+      ]
+
+    }
+
+
+  ]
+
+};
+
+</script>
+
+<!-- =====================================================
+     =====================================================
+     
+     2. INTERFAZ
+     
+     NO MODIFICAR
+     
+     =====================================================
+     ===================================================== -->
+
+<div
+  class="header"
+  id="header"
+>
+
+  <div
+    class="header-info-container"
+    id="header-info-container"
+  >
+
+
+<div
+  class="header-info"
+  id="header-info"
+></div>
+
+
   </div>
+
 </div>
 
 <div class="content">
-  <div class="series-container" id="series-container"></div>
+
+  <div
+    class="series-container"
+    id="series-container"
+  ></div>
+
 </div>
 
-<script>
-const apiKey = 'd37846975ba7a3ed227604f30b0f9c16';
-const language = 'es-ES';
+<!-- =====================================================
+     =====================================================
+     
+     3. FUNCIONAMIENTO
+     
+     NO MODIFICAR
+     
+     =====================================================
+     ===================================================== -->
 
-const header = document.getElementById('header');
-const headerInfoContainer = document.getElementById('header-info-container');
-const headerInfo = document.getElementById('header-info');
-const container = document.getElementById('series-container');
+<script>
+
+
+/* =====================================================
+   ELEMENTOS
+===================================================== */
+
+const header =
+  document.getElementById("header");
+
+
+const headerInfoContainer =
+  document.getElementById(
+    "header-info-container"
+  );
+
+
+const headerInfo =
+  document.getElementById(
+    "header-info"
+  );
+
+
+const container =
+  document.getElementById(
+    "series-container"
+  );
+
+
+/* =====================================================
+   VARIABLES
+===================================================== */
 
 let seasonRows = [];
+
 let episodesBySeason = [];
+
 let episodesData = [];
 
 let currentSeasonIndex = 0;
+
 let currentEpisodeIndex = 0;
 
-let tvId = null;
-let totalSeasons = 0;
 
-let seriesDetails = null;
+/* =====================================================
+   INICIAR
+===================================================== */
 
-// 🔥 CACHE
-const seasonCache = {};
+function iniciar() {
 
-async function fetchJSON(url){
-  const res = await fetch(url);
-  return await res.json();
+
+  /* ---------------------------------------------------
+     BANNER
+  --------------------------------------------------- */
+
+  if (SERIE.banner) {
+
+    header.style.backgroundImage =
+      `url("${SERIE.banner}")`;
+
+  }
+
+
+  header.classList.add("active");
+
+  headerInfoContainer.classList.add(
+    "visible"
+  );
+
+
+  /* ---------------------------------------------------
+     INFORMACIÃ“N INICIAL
+  --------------------------------------------------- */
+
+  mostrarInformacionSerie();
+
+
+  /* ---------------------------------------------------
+     CREAR TEMPORADAS
+  --------------------------------------------------- */
+
+  SERIE.temporadas.forEach(
+    crearTemporada
+  );
+
+
+  /* ---------------------------------------------------
+     MOSTRAR PRIMERA TEMPORADA
+  --------------------------------------------------- */
+
+  if (seasonRows.length > 0) {
+
+    seasonRows[0].style.display =
+      "block";
+
+  }
+
+
+  actualizarSeleccion();
+
 }
 
-async function load(){
-  const search = await fetchJSON(
-    `https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&language=${language}&query=miercoles`
-  );
 
-  tvId = search.results[0].id;
+/* =====================================================
+   INFORMACIÃ“N DE LA SERIE
+===================================================== */
 
-  const details = await fetchJSON(
-    `https://api.themoviedb.org/3/tv/${tvId}?api_key=${apiKey}&language=${language}&append_to_response=images`
-  );
+function mostrarInformacionSerie() {
 
-  seriesDetails = details;
-  totalSeasons = details.number_of_seasons;
-
-  header.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${details.backdrop_path}')`;
-  header.classList.add('active');
-  headerInfoContainer.classList.add('visible');
-
-  const logo = (details.images.logos || []).find(l=>l.iso_639_1==='es') || details.images.logos?.[0];
 
   headerInfo.innerHTML = `
-    ${logo ? `<img src="https://image.tmdb.org/t/p/original${logo.file_path}">` : `<h1>${details.name}</h1>`}
-    <div class="details">Serie | ${details.first_air_date?.split('-')[0] || ''} | ${totalSeasons} temporadas</div>
-    <p class="overview">${details.overview || ''}</p>
+
+    ${
+      SERIE.logo
+
+      ?
+
+      `
+      <img
+        src="${SERIE.logo}"
+        alt="${SERIE.titulo}"
+      >
+      `
+
+      :
+
+      `
+      <h1>${SERIE.titulo}</h1>
+      `
+    }
+
+
+    <div class="details">
+
+      ${SERIE.detalles}
+
+    </div>
+
+
+    <p class="overview">
+
+      ${SERIE.descripcion}
+
+    </p>
+
   `;
 
-  await loadSeason(1);
-
-  seasonRows[0].style.display = 'block';
-  updateSelection();
 }
 
-// 🔥 Lazy load temporadas
-async function loadSeason(seasonNumber){
-  if(seasonCache[seasonNumber]) return;
 
-  const season = await fetchJSON(
-    `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${apiKey}&language=${language}`
+/* =====================================================
+   CREAR TEMPORADA
+===================================================== */
+
+function crearTemporada(
+  temporada,
+  seasonIndex
+) {
+
+
+  const row =
+    document.createElement("div");
+
+
+  row.className =
+    "season-row";
+
+
+  /* ---------------------------------------------------
+     TÃTULO
+  --------------------------------------------------- */
+
+  const title =
+    document.createElement("div");
+
+
+  title.className =
+    "season-title";
+
+
+  title.textContent =
+    `Temporada ${temporada.numero}`;
+
+
+  /* ---------------------------------------------------
+     LISTA
+  --------------------------------------------------- */
+
+  const list =
+    document.createElement("div");
+
+
+  list.className =
+    "episodes-list";
+
+
+  const thumbs = [];
+
+  const datos = [];
+
+
+  /* ---------------------------------------------------
+     CREAR CAPÃTULOS
+  --------------------------------------------------- */
+
+  temporada.capitulos.forEach(
+    (capitulo, episodeIndex) => {
+
+
+      const elemento =
+        document.createElement("div");
+
+
+      elemento.className =
+        "episode-thumb";
+
+
+      elemento.tabIndex = 0;
+
+
+      /* -----------------------------------------------
+         MINIATURA
+      ----------------------------------------------- */
+
+      elemento.innerHTML = `
+
+        <img
+          src="${capitulo.imagen}"
+          alt="${capitulo.titulo}"
+        >
+
+      `;
+
+
+      /* -----------------------------------------------
+         CLIC / TÃCTIL
+
+         Toque corto:
+         - selecciona
+         - abre el capÃ­tulo
+
+         PulsaciÃ³n larga:
+         - selecciona
+         - NO abre el capÃ­tulo
+      ----------------------------------------------- */
+
+      let pulsacionLarga = false;
+      let temporizadorPulsacion = null;
+
+      elemento.addEventListener(
+        "pointerdown",
+        (evento) => {
+
+          /* Solo botÃ³n principal / toque */
+          if (
+            evento.pointerType === "mouse" &&
+            evento.button !== 0
+          ) {
+            return;
+          }
+
+          pulsacionLarga = false;
+
+          temporizadorPulsacion =
+            setTimeout(() => {
+
+              pulsacionLarga = true;
+
+              currentSeasonIndex =
+                seasonIndex;
+
+              currentEpisodeIndex =
+                episodeIndex;
+
+              actualizarSeleccion();
+
+            }, 600);
+
+        }
+      );
+
+
+      elemento.addEventListener(
+        "pointerup",
+        () => {
+
+          if (temporizadorPulsacion) {
+
+            clearTimeout(
+              temporizadorPulsacion
+            );
+
+            temporizadorPulsacion = null;
+
+          }
+
+        }
+      );
+
+
+      elemento.addEventListener(
+        "pointercancel",
+        () => {
+
+          if (temporizadorPulsacion) {
+
+            clearTimeout(
+              temporizadorPulsacion
+            );
+
+            temporizadorPulsacion = null;
+
+          }
+
+        }
+      );
+
+
+      elemento.addEventListener(
+        "click",
+        (evento) => {
+
+          /*
+             Si fue una pulsaciÃ³n larga,
+             el click generado por el navegador
+             NO debe abrir el capÃ­tulo.
+          */
+
+          if (pulsacionLarga) {
+
+            evento.preventDefault();
+
+            pulsacionLarga = false;
+
+            return;
+
+          }
+
+
+          currentSeasonIndex =
+            seasonIndex;
+
+          currentEpisodeIndex =
+            episodeIndex;
+
+          actualizarSeleccion();
+
+          abrirCapitulo(capitulo);
+
+        }
+      );
+
+
+      /* -----------------------------------------------
+         ENTER
+      ----------------------------------------------- */
+
+      elemento.addEventListener(
+        "keydown",
+        (evento) => {
+
+          if (evento.key === "Enter") {
+
+            evento.preventDefault();
+
+            currentSeasonIndex =
+              seasonIndex;
+
+            currentEpisodeIndex =
+              episodeIndex;
+
+            actualizarSeleccion();
+
+            abrirCapitulo(capitulo);
+
+          }
+
+        }
+      );
+
+
+      list.appendChild(elemento);
+
+      thumbs.push(elemento);
+
+      datos.push(capitulo);
+
+    }
   );
 
-  seasonCache[seasonNumber] = season;
 
-  const row = document.createElement('div');
-  row.className = 'season-row';
-
-  const title = document.createElement('div');
-  title.className = 'season-title';
-  title.textContent = `Temporada ${seasonNumber}`;
-
-  const list = document.createElement('div');
-  list.className = 'episodes-list';
-
-  let thumbs = [];
-  let epsData = [];
-
-  season.episodes.forEach(ep=>{
-    const div = document.createElement('div');
-    div.className = 'episode-thumb';
-
-    div.innerHTML = `
-      <img src="https://image.tmdb.org/t/p/w500${ep.still_path}">
-      
-    `;
-
-    list.appendChild(div);
-
-    thumbs.push(div);
-    epsData.push(ep);
-  });
+  /* ---------------------------------------------------
+     AÃ‘ADIR A LA PÃGINA
+  --------------------------------------------------- */
 
   row.appendChild(title);
+
   row.appendChild(list);
+
   container.appendChild(row);
 
+
   seasonRows.push(row);
+
   episodesBySeason.push(thumbs);
-  episodesData.push(epsData);
+
+  episodesData.push(datos);
+
 }
 
-// 🔥 HEADER con formato T1 - E01
-function updateHeader(ep){
-  if(!ep || !seriesDetails) return;
 
-  const logo = (seriesDetails.images.logos || []).find(l=>l.iso_639_1==='es') || seriesDetails.images.logos?.[0];
+/* =====================================================
+   ABRIR CAPÃTULO
+===================================================== */
 
-  const seasonNum = currentSeasonIndex + 1;
-  const episodeNum = ep.episode_number;
+function abrirCapitulo(capitulo) {
 
-  const formatted = `T${seasonNum} - E${String(episodeNum).padStart(2,'0')}`;
+
+  if (
+    !capitulo ||
+    !capitulo.url
+  ) {
+
+    return;
+
+  }
+
+
+  window.location.href =
+    capitulo.url;
+
+}
+
+
+/* =====================================================
+   ACTUALIZAR HEADER
+===================================================== */
+
+function actualizarHeader(
+  capitulo
+) {
+
+
+  if (!capitulo) {
+
+    return;
+
+  }
+
+
+  const temporada =
+    SERIE.temporadas[
+      currentSeasonIndex
+    ];
+
+
+  const numeroTemporada =
+    temporada.numero;
+
+
+  const numeroCapitulo =
+    capitulo.numero;
+
+
+  const codigo =
+    `T${numeroTemporada} - E${
+      String(numeroCapitulo)
+        .padStart(2, "0")
+    }`;
+
 
   headerInfo.innerHTML = `
-    ${logo ? `<img src="https://image.tmdb.org/t/p/original${logo.file_path}">` : `<h1>${seriesDetails.name}</h1>`}
-    <div class="details">${formatted} - ${ep.name}</div>
-    <p class="overview">${ep.overview || 'Sin sinopsis disponible'}</p>
+
+    ${
+      SERIE.logo
+
+      ?
+
+      `
+      <img
+        src="${SERIE.logo}"
+        alt="${SERIE.titulo}"
+      >
+      `
+
+      :
+
+      `
+      <h1>${SERIE.titulo}</h1>
+      `
+    }
+
+
+    <div class="details">
+
+      ${codigo} - ${capitulo.titulo}
+
+    </div>
+
+
+    <p class="overview">
+
+      ${
+        capitulo.descripcion ||
+        "Sin sinopsis disponible"
+      }
+
+    </p>
+
   `;
+
 }
 
-function updateSelection(){
-  episodesBySeason.forEach(s=>s.forEach(e=>e.classList.remove('selected')));
 
-  const current = episodesBySeason[currentSeasonIndex];
-  const data = episodesData[currentSeasonIndex];
+/* =====================================================
+   ACTUALIZAR SELECCIÃ“N
+===================================================== */
 
-  if(!current || !data) return;
+function actualizarSeleccion() {
 
-  const ep = current[currentEpisodeIndex];
-  const epData = data[currentEpisodeIndex];
 
-  if(ep){
-    ep.classList.add('selected');
-    ep.scrollIntoView({behavior:'smooth', inline:'center'});
+  /* ---------------------------------------------------
+     QUITAR SELECCIÃ“N ANTERIOR
+  --------------------------------------------------- */
+
+  episodesBySeason.forEach(
+    temporada => {
+
+      temporada.forEach(
+        capitulo => {
+
+          capitulo.classList.remove(
+            "selected"
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+  /* ---------------------------------------------------
+     CAPÃTULO ACTUAL
+  --------------------------------------------------- */
+
+  const temporadaActual =
+    episodesBySeason[
+      currentSeasonIndex
+    ];
+
+
+  const datosTemporada =
+    episodesData[
+      currentSeasonIndex
+    ];
+
+
+  if (
+    !temporadaActual ||
+    !datosTemporada
+  ) {
+
+    return;
+
   }
 
-  updateHeader(epData);
+
+  const capituloActual =
+    temporadaActual[
+      currentEpisodeIndex
+    ];
+
+
+  const datosCapitulo =
+    datosTemporada[
+      currentEpisodeIndex
+    ];
+
+
+  /* ---------------------------------------------------
+     MARCAR CAPÃTULO
+  --------------------------------------------------- */
+
+  if (capituloActual) {
+
+    capituloActual.classList.add(
+      "selected"
+    );
+
+
+    capituloActual.scrollIntoView({
+
+      behavior: "smooth",
+
+      inline: "center",
+
+      block: "nearest"
+
+    });
+
+  }
+
+
+  /* ---------------------------------------------------
+     ACTUALIZAR INFORMACIÃ“N
+  --------------------------------------------------- */
+
+  actualizarHeader(
+    datosCapitulo
+  );
+
 }
 
-// 🎮 CONTROLES TV
-document.addEventListener('keydown', async (e)=>{
 
-  const current = episodesBySeason[currentSeasonIndex];
-  if(!current) return;
+/* =====================================================
+   MOSTRAR TEMPORADA
+===================================================== */
 
-  if(e.key==='ArrowRight'){
-    if(currentEpisodeIndex < current.length-1) currentEpisodeIndex++;
-  }
+function mostrarTemporada(index) {
 
-  if(e.key==='ArrowLeft'){
-    if(currentEpisodeIndex > 0) currentEpisodeIndex--;
-  }
 
-  if(e.key==='ArrowDown'){
-    if(currentSeasonIndex < totalSeasons-1){
-      currentSeasonIndex++;
-      currentEpisodeIndex = 0;
+  seasonRows.forEach(
+    temporada => {
 
-      await loadSeason(currentSeasonIndex + 1);
+      temporada.style.display =
+        "none";
 
-      seasonRows.forEach(r=>r.style.display='none');
-      seasonRows[currentSeasonIndex].style.display='block';
     }
+  );
+
+
+  if (seasonRows[index]) {
+
+    seasonRows[index].style.display =
+      "block";
+
   }
 
-  if(e.key==='ArrowUp'){
-    if(currentSeasonIndex > 0){
-      currentSeasonIndex--;
-      currentEpisodeIndex = 0;
+}
 
-      seasonRows.forEach(r=>r.style.display='none');
-      seasonRows[currentSeasonIndex].style.display='block';
+
+/* =====================================================
+   TECLADO
+===================================================== */
+
+document.addEventListener(
+  "keydown",
+  (evento) => {
+
+
+    const temporadaActual =
+      episodesBySeason[
+        currentSeasonIndex
+      ];
+
+
+    if (!temporadaActual) {
+
+      return;
+
     }
+
+
+    /* -------------------------------------------------
+       DERECHA
+    ------------------------------------------------- */
+
+    if (
+      evento.key === "ArrowRight"
+    ) {
+
+      evento.preventDefault();
+
+
+      if (
+        currentEpisodeIndex <
+        temporadaActual.length - 1
+      ) {
+
+        currentEpisodeIndex++;
+
+        actualizarSeleccion();
+
+      }
+
+    }
+
+
+    /* -------------------------------------------------
+       IZQUIERDA
+    ------------------------------------------------- */
+
+    else if (
+      evento.key === "ArrowLeft"
+    ) {
+
+      evento.preventDefault();
+
+
+      if (
+        currentEpisodeIndex > 0
+      ) {
+
+        currentEpisodeIndex--;
+
+        actualizarSeleccion();
+
+      }
+
+    }
+
+
+    /* -------------------------------------------------
+       ABAJO
+    ------------------------------------------------- */
+
+    else if (
+      evento.key === "ArrowDown"
+    ) {
+
+      evento.preventDefault();
+
+
+      if (
+        currentSeasonIndex <
+        episodesBySeason.length - 1
+      ) {
+
+        currentSeasonIndex++;
+
+        currentEpisodeIndex = 0;
+
+
+        mostrarTemporada(
+          currentSeasonIndex
+        );
+
+
+        actualizarSeleccion();
+
+      }
+
+    }
+
+
+    /* -------------------------------------------------
+       ARRIBA
+    ------------------------------------------------- */
+
+    else if (
+      evento.key === "ArrowUp"
+    ) {
+
+      evento.preventDefault();
+
+
+      if (
+        currentSeasonIndex > 0
+      ) {
+
+        currentSeasonIndex--;
+
+        currentEpisodeIndex = 0;
+
+
+        mostrarTemporada(
+          currentSeasonIndex
+        );
+
+
+        actualizarSeleccion();
+
+      }
+
+    }
+
+
+    /* -------------------------------------------------
+       ENTER
+    ------------------------------------------------- */
+
+    else if (
+      evento.key === "Enter"
+    ) {
+
+      evento.preventDefault();
+
+
+      const capitulo =
+        episodesData[
+          currentSeasonIndex
+        ][
+          currentEpisodeIndex
+        ];
+
+
+      abrirCapitulo(
+        capitulo
+      );
+
+    }
+
   }
+);
 
-  updateSelection();
-});
 
-window.onload = load;
+/* =====================================================
+   EVITAR MENÃš CONTEXTUAL EN PULSACIÃ“N LARGA
+===================================================== */
+
+document.addEventListener(
+  "contextmenu",
+  (evento) => {
+
+    if (
+      evento.target.closest &&
+      evento.target.closest(".episode-thumb")
+    ) {
+      evento.preventDefault();
+    }
+
+  }
+);
+
+
+/* =====================================================
+   CONTROL TÃCTIL / MÃ“VIL / TABLET
+===================================================== */
+
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+
+document.addEventListener(
+  "touchstart",
+  (evento) => {
+
+    if (
+      !evento.touches ||
+      evento.touches.length !== 1
+    ) {
+      return;
+    }
+
+    touchStartX =
+      evento.touches[0].clientX;
+
+    touchStartY =
+      evento.touches[0].clientY;
+
+    touchStartTime = Date.now();
+
+  },
+  { passive: true }
+);
+
+
+document.addEventListener(
+  "touchend",
+  (evento) => {
+
+    if (
+      !evento.changedTouches ||
+      evento.changedTouches.length !== 1
+    ) {
+      return;
+    }
+
+    const touch =
+      evento.changedTouches[0];
+
+    const touchEndX =
+      touch.clientX;
+
+    const touchEndY =
+      touch.clientY;
+
+    const diferenciaX =
+      touchEndX - touchStartX;
+
+    const diferenciaY =
+      touchEndY - touchStartY;
+
+    const tiempo =
+      Date.now() - touchStartTime;
+
+
+    /* ---------------------------------------------------
+       IGNORAR GESTOS DEMASIADO LARGOS
+    --------------------------------------------------- */
+
+    if (tiempo > 800) {
+      return;
+    }
+
+
+    /* ---------------------------------------------------
+       IGNORAR DESLIZAMIENTOS HORIZONTALES
+       PARA NO INTERFERIR CON LOS CAPÃTULOS
+    --------------------------------------------------- */
+
+    if (
+      Math.abs(diferenciaX) >
+      Math.abs(diferenciaY)
+    ) {
+      return;
+    }
+
+
+    /* ---------------------------------------------------
+       DISTANCIA MÃNIMA DEL GESTO
+    --------------------------------------------------- */
+
+    if (
+      Math.abs(diferenciaY) < 60
+    ) {
+      return;
+    }
+
+
+    /* ===================================================
+       DESLIZAR HACIA ARRIBA
+       â†’ SIGUIENTE TEMPORADA
+    =================================================== */
+
+    if (diferenciaY < 0) {
+
+      if (
+        currentSeasonIndex <
+        episodesBySeason.length - 1
+      ) {
+
+        currentSeasonIndex++;
+
+        currentEpisodeIndex = 0;
+
+        mostrarTemporada(
+          currentSeasonIndex
+        );
+
+        actualizarSeleccion();
+
+      }
+
+    }
+
+
+    /* ===================================================
+       DESLIZAR HACIA ABAJO
+       â†’ TEMPORADA ANTERIOR
+    =================================================== */
+
+    else {
+
+      if (
+        currentSeasonIndex > 0
+      ) {
+
+        currentSeasonIndex--;
+
+        currentEpisodeIndex = 0;
+
+        mostrarTemporada(
+          currentSeasonIndex
+        );
+
+        actualizarSeleccion();
+
+      }
+
+    }
+
+  },
+  { passive: true }
+);
+
+
+/* =====================================================
+   ARRANCAR LA PLANTILLA
+===================================================== */
+
+window.addEventListener(
+  "load",
+  iniciar
+);
+
 </script>
 
 </body>
