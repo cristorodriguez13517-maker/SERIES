@@ -6,7 +6,7 @@ import requests
 ROOT = Path(__file__).resolve().parent
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '').strip()
 TMDB_API_KEY = os.getenv('TMDB_API_KEY', '').strip()
-PLAYLIST_ID = os.getenv('YOUTUBE_SERIES_PLAYLIST_ID', 'PLAeNuSpPHAsk').strip()
+PLAYLIST_ID = os.getenv('PLAeNuSpPHAsk', 'PLAeNuSpPHAsk').strip()
 YT = 'https://www.googleapis.com/youtube/v3'
 TMDB = 'https://api.themoviedb.org/3'
 IMG = 'https://image.tmdb.org/t/p/'
