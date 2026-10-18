@@ -1,1 +1,41 @@
-{}
+{
+  "local-los-dinosaurios-2026": [
+    {
+      "numero": 1,
+      "capitulos": [
+        {
+          "numero": 1,
+          "titulo": "Ascenso",
+          "imagen": "https://i.ytimg.com/vi/uoEfIVVSWVg/hqdefault.jpg",
+          "url": "https://www.youtube.com/watch?v=uoEfIVVSWVg",
+          "youtube_id": "uoEfIVVSWVg",
+          "youtube_title": "Los dinosaurios (2026) S01E01 - Ascenso"
+        },
+        {
+          "numero": 2,
+          "titulo": "Expansíon",
+          "imagen": "https://i.ytimg.com/vi/PqVT3XdHHhM/hqdefault.jpg",
+          "url": "https://www.youtube.com/watch?v=PqVT3XdHHhM",
+          "youtube_id": "PqVT3XdHHhM",
+          "youtube_title": "Los dinosaurios (2026) S01E2 - Expansíon"
+        },
+        {
+          "numero": 3,
+          "titulo": "Imperio",
+          "imagen": "https://i.ytimg.com/vi/zukv8IaCRJA/hqdefault.jpg",
+          "url": "https://www.youtube.com/watch?v=zukv8IaCRJA",
+          "youtube_id": "zukv8IaCRJA",
+          "youtube_title": "Los dinosaurios (2026) S01E03 - Imperio"
+        },
+        {
+          "numero": 4,
+          "titulo": "Caída",
+          "imagen": "https://i.ytimg.com/vi/aFdVfwICfO0/hqdefault.jpg",
+          "url": "https://www.youtube.com/watch?v=aFdVfwICfO0",
+          "youtube_id": "aFdVfwICfO0",
+          "youtube_title": "Los dinosaurios (2026) S01E04 - Caída"
+        }
+      ]
+    }
+  ]
+}
