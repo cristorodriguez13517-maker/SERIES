@@ -4,15 +4,15 @@ import re
 import json
 import time
 import unicodedata
-from pathlib import Path
-
 import requests
+from pathlib import Path
+from urllib.parse import urlparse, parse_qs
 
-# ==========================================================
-# CONFIGURACIÓN SHARKTV
-# ==========================================================
+# ============================================================
+# SHARKTV - ACTUALIZADOR AUTOMATICO DE SERIES Y EPISODIOS
+# ============================================================
 
-ROOT = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent
 
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "").strip()
 TMDB_API_KEY = os.getenv("TMDB_API_KEY", "").strip()
@@ -21,506 +21,893 @@ PLAYLIST_ID = os.getenv(
     "PLAeNuSpPHAsk"
 ).strip()
 
-YT = "https://www.googleapis.com/youtube/v3"
-TMDB = "https://api.themoviedb.org/3"
-IMG = "https://image.tmdb.org/t/p/"
+YOUTUBE_API = "https://www.googleapis.com/youtube/v3"
+TMDB_API = "https://api.themoviedb.org/3"
+TMDB_IMAGES = "https://image.tmdb.org/t/p"
 
-# Ejemplos aceptados:
-# Los dinosaurios (2026) S01E01 - Ascenso
-# Mi Serie S1E2 - El misterio
-PATTERN = re.compile(
-    r"^(?P<name>.+?)\s+S(?P<season>\d{1,2})"
-    r"\s*E(?P<episode>\d{1,3})\b"
-    r"(?:\s*[-–—:|]\s*(?P<epname>.*))?$",
-    re.IGNORECASE
-)
+ARCHIVO_SERIES = BASE_DIR / "series.json"
+ARCHIVO_EPISODIOS = BASE_DIR / "episodios.json"
 
+IDIOMA = "es-ES"
+TIMEOUT = 25
 
-# ==========================================================
-# FUNCIONES GENERALES
-# ==========================================================
+session = requests.Session()
+session.headers.update({"User-Agent": "SharkTV-Series-Updater/2.0"})
 
-def norm(texto):
-    texto = unicodedata.normalize(
-        "NFKD", str(texto or "")
-    ).encode("ascii", "ignore").decode("ascii")
-
-    return re.sub(r"[^a-z0-9]+", " ", texto.lower()).strip()
+# Títulos alternativos conocidos. Sirven cuando el título de YouTube
+# está en español y TMDB encuentra la serie con su nombre original.
+ALIAS_TITULOS = {
+    "los dinosaurios": ["Los dinosaurios", "The Dinosaurs"],
+}
 
 
-def get_json(url, params=None):
-    respuesta = requests.get(
-        url,
-        params=params,
-        timeout=30
-    )
-    respuesta.raise_for_status()
-    return respuesta.json()
+# ============================================================
+# UTILIDADES
+# ============================================================
 
-
-def image_url(path, size="w780"):
-    if not path:
-        return ""
-    return IMG + size + path
-
-
-def leer_json_anterior(nombre, valor_por_defecto):
-    ruta = ROOT / nombre
-
+def leer_json(ruta, valor_por_defecto):
     try:
-        with ruta.open("r", encoding="utf-8") as archivo:
-            return json.load(archivo)
-    except (OSError, json.JSONDecodeError):
-        return valor_por_defecto
+        if ruta.exists():
+            with ruta.open("r", encoding="utf-8") as archivo:
+                return json.load(archivo)
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"AVISO: no se pudo leer {ruta.name}: {error}")
+
+    return valor_por_defecto
 
 
-def guardar_json(nombre, datos):
-    ruta = ROOT / nombre
+def guardar_json(ruta, datos):
+    temporal = ruta.with_suffix(ruta.suffix + ".tmp")
 
-    with ruta.open("w", encoding="utf-8") as archivo:
+    with temporal.open("w", encoding="utf-8") as archivo:
         json.dump(
             datos,
             archivo,
             ensure_ascii=False,
             indent=2
         )
+        archivo.write("\n")
 
-    print("Archivo actualizado:", nombre)
+    temporal.replace(ruta)
 
 
-# ==========================================================
+def normalizar(texto):
+    texto = str(texto or "").lower().strip()
+    texto = unicodedata.normalize("NFD", texto)
+    texto = "".join(
+        caracter for caracter in texto
+        if unicodedata.category(caracter) != "Mn"
+    )
+    texto = re.sub(r"[^a-z0-9]+", " ", texto)
+    return re.sub(r"\s+", " ", texto).strip()
+
+
+def crear_slug(texto):
+    texto = normalizar(texto).replace(" ", "-")
+    return texto or "serie-sin-titulo"
+
+
+def url_imagen(ruta, tamano="original"):
+    if not ruta:
+        return ""
+    return f"{TMDB_IMAGES}/{tamano}{ruta}"
+
+
+def peticion_json(url, params=None, intentos=3):
+    for intento in range(intentos):
+        try:
+            respuesta = session.get(
+                url,
+                params=params,
+                timeout=TIMEOUT
+            )
+
+            if respuesta.status_code == 429:
+                espera = int(respuesta.headers.get("Retry-After", "3"))
+                print(f"Limite de solicitudes. Esperando {espera} s...")
+                time.sleep(max(espera, 2))
+                continue
+
+            respuesta.raise_for_status()
+            return respuesta.json()
+
+        except (requests.RequestException, ValueError) as error:
+            print(f"Error consultando {url}: {error}")
+
+            if intento < intentos - 1:
+                time.sleep(2)
+
+    return {}
+
+
+# ============================================================
 # YOUTUBE
-# ==========================================================
+# ============================================================
 
-def youtube_items():
-    elementos = []
-    token = None
+def extraer_video_id(item):
+    contenido = item.get("contentDetails", {})
+    video_id = contenido.get("videoId")
+
+    if video_id:
+        return video_id
+
+    snippet = item.get("snippet", {})
+    recurso = snippet.get("resourceId", {})
+    video_id = recurso.get("videoId")
+
+    if video_id:
+        return video_id
+
+    enlace = (
+        item.get("url")
+        or item.get("link")
+        or snippet.get("url")
+        or ""
+    )
+
+    if "youtu.be/" in enlace:
+        return enlace.split("youtu.be/")[-1].split("?")[0]
+
+    if "youtube.com" in enlace:
+        return parse_qs(urlparse(enlace).query).get("v", [""])[0]
+
+    return ""
+
+
+def obtener_videos_playlist():
+    if not YOUTUBE_API_KEY:
+        raise RuntimeError(
+            "Falta el secreto YOUTUBE_API_KEY en GitHub."
+        )
+
+    if not PLAYLIST_ID:
+        raise RuntimeError(
+            "Falta YOUTUBE_SERIES_PLAYLIST_ID."
+        )
+
+    videos = []
+    pagina = None
 
     while True:
         parametros = {
             "part": "snippet,contentDetails",
             "playlistId": PLAYLIST_ID,
             "maxResults": 50,
-            "key": YOUTUBE_API_KEY
+            "key": YOUTUBE_API_KEY,
         }
 
-        if token:
-            parametros["pageToken"] = token
+        if pagina:
+            parametros["pageToken"] = pagina
 
-        datos = get_json(
-            YT + "/playlistItems",
+        datos = peticion_json(
+            f"{YOUTUBE_API}/playlistItems",
             parametros
         )
 
-        elementos.extend(datos.get("items", []))
-        token = datos.get("nextPageToken")
+        if "error" in datos:
+            raise RuntimeError(
+                "YouTube ha devuelto un error: "
+                + str(datos["error"])
+            )
 
-        if not token:
+        elementos = datos.get("items", [])
+
+        for item in elementos:
+            snippet = item.get("snippet", {})
+            video_id = extraer_video_id(item)
+            titulo = (snippet.get("title") or "").strip()
+
+            if not video_id or not titulo:
+                continue
+
+            if titulo.lower() in (
+                "deleted video",
+                "private video"
+            ):
+                continue
+
+            videos.append({
+                "youtube_id": video_id,
+                "youtube_title": titulo,
+                "youtube_url": (
+                    f"https://www.youtube.com/watch?v={video_id}"
+                ),
+                "youtube_image": (
+                    f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+                ),
+            })
+
+        pagina = datos.get("nextPageToken")
+
+        if not pagina:
             break
 
-        time.sleep(0.1)
+    # Evita duplicar un vídeo si aparece repetido en la lista.
+    unicos = {}
+    for video in videos:
+        unicos[video["youtube_id"]] = video
 
-    return elementos
+    resultado = list(unicos.values())
+    print(f"YouTube: {len(resultado)} vídeos encontrados.")
+    return resultado
 
 
-# ==========================================================
-# TMDB
-# ==========================================================
+# ============================================================
+# ANALIZAR TITULOS DE YOUTUBE
+# Formato esperado: Nombre de serie S01E01 - Nombre del episodio
+# También acepta S01E1, 1x01, etc.
+# ============================================================
 
-def tmdb_search(nombre, cache):
-    clave = norm(nombre)
+PATRON_EPISODIO = re.compile(
+    r"^(?P<serie>.*?)\s+"
+    r"(?:S(?P<temporada>\d{1,2})\s*E(?P<episodio>\d{1,3})"
+    r"|(?P<temporada2>\d{1,2})x(?P<episodio2>\d{1,3}))"
+    r"(?:\s*[-–—:|]\s*(?P<titulo>.*))?$",
+    re.IGNORECASE
+)
 
-    if clave in cache:
-        return cache[clave]
 
-    parametros = {
-        "api_key": TMDB_API_KEY,
-        "language": "es-ES",
-        "query": nombre,
-        "include_adult": "false"
+def analizar_titulo(titulo):
+    titulo = (titulo or "").strip()
+    coincidencia = PATRON_EPISODIO.match(titulo)
+
+    if not coincidencia:
+        return None
+
+    temporada = (
+        coincidencia.group("temporada")
+        or coincidencia.group("temporada2")
+    )
+
+    numero_episodio = (
+        coincidencia.group("episodio")
+        or coincidencia.group("episodio2")
+    )
+
+    nombre_serie = coincidencia.group("serie").strip()
+    nombre_episodio = (
+        coincidencia.group("titulo") or ""
+    ).strip()
+
+    # Elimina espacios y separadores sobrantes del título de la serie.
+    nombre_serie = re.sub(r"[\s\-–—:|]+$", "", nombre_serie).strip()
+
+    if not nombre_serie:
+        return None
+
+    return {
+        "serie": nombre_serie,
+        "temporada": int(temporada),
+        "episodio": int(numero_episodio),
+        "titulo_episodio": nombre_episodio,
     }
 
-    datos = get_json(
-        TMDB + "/search/tv",
+
+def separar_titulo_y_anio(nombre):
+    nombre = (nombre or "").strip()
+    coincidencia = re.search(r"\s*\(((?:19|20)\d{2})\)\s*$", nombre)
+
+    if not coincidencia:
+        return nombre, None
+
+    anio = int(coincidencia.group(1))
+    nombre_base = nombre[:coincidencia.start()].strip()
+    return nombre_base, anio
+
+
+# ============================================================
+# TMDB: BUSQUEDA INTELIGENTE
+# ============================================================
+
+def buscar_series_tmdb(consulta, anio=None, idioma=IDIOMA):
+    parametros = {
+        "api_key": TMDB_API_KEY,
+        "query": consulta,
+        "language": idioma,
+        "include_adult": "false",
+    }
+
+    if anio:
+        parametros["first_air_date_year"] = anio
+
+    datos = peticion_json(
+        f"{TMDB_API}/search/tv",
         parametros
+    )
+
+    return datos.get("results", [])
+
+
+def puntuar_candidato(candidato, nombre_base, anio):
+    nombre = candidato.get("name", "")
+    original = candidato.get("original_name", "")
+    fecha = candidato.get("first_air_date", "")
+    nombre_normalizado = normalizar(nombre)
+    original_normalizado = normalizar(original)
+    buscado = normalizar(nombre_base)
+
+    puntuacion = 0
+
+    if nombre_normalizado == buscado:
+        puntuacion += 100
+
+    if original_normalizado == buscado:
+        puntuacion += 95
+
+    if buscado and (
+        buscado in nombre_normalizado
+        or nombre_normalizado in buscado
+    ):
+        puntuacion += 25
+
+    if buscado and (
+        buscado in original_normalizado
+        or original_normalizado in buscado
+    ):
+        puntuacion += 20
+
+    if anio and fecha:
+        try:
+            anio_tmdb = int(fecha[:4])
+            if anio_tmdb == anio:
+                puntuacion += 60
+            else:
+                puntuacion -= min(abs(anio_tmdb - anio) * 8, 40)
+        except (ValueError, TypeError):
+            pass
+
+    # En caso de empate, prioriza resultados con imágenes y sinopsis.
+    if candidato.get("poster_path"):
+        puntuacion += 2
+    if candidato.get("backdrop_path"):
+        puntuacion += 2
+    if candidato.get("overview"):
+        puntuacion += 1
+
+    return puntuacion
+
+
+def buscar_serie_tmdb(nombre_youtube):
+    nombre_base, anio = separar_titulo_y_anio(nombre_youtube)
+
+    nombres_busqueda = [nombre_base]
+
+    clave = normalizar(nombre_base)
+    for clave_alias, alias in ALIAS_TITULOS.items():
+        if clave == normalizar(clave_alias):
+            nombres_busqueda.extend(alias)
+
+    # También intenta el título completo cuando lleva año.
+    if anio:
+        nombres_busqueda.append(f"{nombre_base} {anio}")
+
+    nombres_busqueda = list(dict.fromkeys(
+        nombre for nombre in nombres_busqueda if nombre
+    ))
+
+    candidatos_por_id = {}
+
+    for consulta in nombres_busqueda:
+        # Español primero y título original en inglés después.
+        idiomas = [IDIOMA, "en-US"]
+
+        for idioma in idiomas:
+            resultados = buscar_series_tmdb(
+                consulta,
+                anio=anio,
+                idioma=idioma
+            )
+
+            for candidato in resultados:
+                candidato_id = candidato.get("id")
+                if not candidato_id:
+                    continue
+
+                anterior = candidatos_por_id.get(candidato_id)
+
+                puntuacion = puntuar_candidato(
+                    candidato,
+                    nombre_base,
+                    anio
+                )
+
+                if anterior is None or puntuacion > anterior["_puntuacion"]:
+                    candidato["_puntuacion"] = puntuacion
+                    candidatos_por_id[candidato_id] = candidato
+
+            time.sleep(0.15)
+
+    if not candidatos_por_id:
+        print(
+            f"TMDB: no se encontró la serie '{nombre_youtube}'. "
+            "Se conservará con ID local."
+        )
+        return None
+
+    candidatos = sorted(
+        candidatos_por_id.values(),
+        key=lambda item: item.get("_puntuacion", 0),
+        reverse=True
+    )
+
+    mejor = candidatos[0]
+    puntuacion = mejor.get("_puntuacion", 0)
+
+    print(
+        "TMDB candidato: "
+        f"{mejor.get('name')} "
+        f"({mejor.get('first_air_date', '')}) "
+        f"| ID {mejor.get('id')} | puntuación {puntuacion}"
+    )
+
+    # No asociar automáticamente una serie completamente distinta.
+    # La puntuación por título exacto, título original y año debe ser suficiente.
+    if puntuacion < 25:
+        print(
+            f"TMDB: coincidencia poco segura para '{nombre_youtube}'. "
+            "Se evita enlazar una serie incorrecta."
+        )
+        return None
+
+    return mejor
+
+
+def obtener_detalles_serie(tmdb_id):
+    parametros = {
+        "api_key": TMDB_API_KEY,
+        "language": IDIOMA,
+        "append_to_response": "images",
+        "include_image_language": "es,en,null",
+    }
+
+    datos = peticion_json(
+        f"{TMDB_API}/tv/{tmdb_id}",
+        parametros
+    )
+
+    if not datos or not datos.get("id"):
+        return {}
+
+    imagenes = datos.get("images", {})
+
+    # Selecciona primero logos en español, luego inglés y finalmente otros.
+    logos = imagenes.get("logos", [])
+
+    def clave_logo(logo):
+        idioma = logo.get("iso_639_1")
+        preferencia = {
+            "es": 0,
+            "en": 1,
+            None: 2,
+        }.get(idioma, 3)
+
+        return (
+            preferencia,
+            -(logo.get("vote_average") or 0),
+            -(logo.get("width") or 0)
+        )
+
+    logos = sorted(logos, key=clave_logo)
+    logo_path = logos[0].get("file_path") if logos else ""
+
+    # Usa el fondo de la ficha y, si falta, el de las imágenes adicionales.
+    backdrop_path = datos.get("backdrop_path") or ""
+    if not backdrop_path:
+        fondos = imagenes.get("backdrops", [])
+        if fondos:
+            fondos.sort(
+                key=lambda item: (
+                    -(item.get("vote_average") or 0),
+                    -(item.get("width") or 0)
+                )
+            )
+            backdrop_path = fondos[0].get("file_path", "")
+
+    poster_path = datos.get("poster_path") or ""
+    if not poster_path:
+        posters = imagenes.get("posters", [])
+        if posters:
+            posters.sort(
+                key=lambda item: (
+                    -(item.get("vote_average") or 0),
+                    -(item.get("width") or 0)
+                )
+            )
+            poster_path = posters[0].get("file_path", "")
+
+    generos = [
+        genero.get("name", "")
+        for genero in datos.get("genres", [])
+        if genero.get("name")
+    ]
+
+    return {
+        "id": datos.get("id"),
+        "title": datos.get("name") or datos.get("original_name") or "",
+        "poster": url_imagen(poster_path, "w780"),
+        "backdrop": url_imagen(backdrop_path, "original"),
+        "logo": url_imagen(logo_path, "original"),
+        "overview": datos.get("overview") or "",
+        "first_air_date": datos.get("first_air_date") or "",
+        "genres": ", ".join(generos),
+        "vote_average": datos.get("vote_average") or 0,
+        "number_of_seasons": datos.get("number_of_seasons") or 0,
+    }
+
+
+def obtener_clasificacion_edad(tmdb_id):
+    datos = peticion_json(
+        f"{TMDB_API}/tv/{tmdb_id}/content_ratings",
+        {"api_key": TMDB_API_KEY}
     )
 
     resultados = datos.get("results", [])
 
-    if not resultados:
-        parametros["language"] = "en-US"
+    # Prioriza España; si no existe, utiliza Estados Unidos.
+    for codigo in ("ES", "US"):
+        for item in resultados:
+            if item.get("iso_3166_1") == codigo:
+                return item.get("rating") or ""
 
-        datos = get_json(
-            TMDB + "/search/tv",
-            parametros
-        )
+    for item in resultados:
+        if item.get("rating"):
+            return item["rating"]
 
-        resultados = datos.get("results", [])
-
-    elegido = None
-    nombre_normalizado = norm(nombre)
-
-    for elemento in resultados:
-        if (
-            norm(elemento.get("name")) == nombre_normalizado
-            or norm(elemento.get("original_name")) == nombre_normalizado
-        ):
-            elegido = elemento
-            break
-
-    if not elegido and resultados:
-        elegido = resultados[0]
-
-    cache[clave] = elegido
-    return elegido
+    return ""
 
 
-def contar_episodios(datos):
-    """
-    Cuenta capítulos de forma segura.
-    Admite listas, diccionarios y estructuras anidadas.
-    Ignora valores numéricos que no sean capítulos.
-    """
+# ============================================================
+# TEMPORADAS Y EPISODIOS
+# ============================================================
 
-    if isinstance(datos, list):
-        return sum(contar_episodios(elemento) for elemento in datos)
+def obtener_datos_temporada(tmdb_id, numero_temporada):
+    datos = peticion_json(
+        f"{TMDB_API}/tv/{tmdb_id}/season/{numero_temporada}",
+        {
+            "api_key": TMDB_API_KEY,
+            "language": IDIOMA,
+        }
+    )
 
-    if isinstance(datos, dict):
-        capitulos = datos.get("capitulos")
+    episodios = {}
 
-        if isinstance(capitulos, list):
-            return len(capitulos)
+    for episodio in datos.get("episodes", []):
+        numero = episodio.get("episode_number")
 
-        total = 0
-
-        for clave, valor in datos.items():
-            if clave == "capitulos":
-                continue
-
-            total += contar_episodios(valor)
-
-        return total
-
-    return 0
-
-
-# ==========================================================
-# PROCESO PRINCIPAL
-# ==========================================================
-
-def main():
-    print("Actualizando catálogo de series SharkTV...")
-    print("Lista de YouTube:", PLAYLIST_ID)
-
-    if not YOUTUBE_API_KEY:
-        raise SystemExit(
-            "ERROR: falta el secreto YOUTUBE_API_KEY en GitHub."
-        )
-
-    if not TMDB_API_KEY:
-        raise SystemExit(
-            "ERROR: falta el secreto TMDB_API_KEY en GitHub."
-        )
-
-    if not PLAYLIST_ID:
-        raise SystemExit(
-            "ERROR: falta el ID de la lista de reproducción."
-        )
-
-    # Recuperar el catálogo anterior para reutilizar búsquedas.
-    series_anteriores = leer_json_anterior("series.json", [])
-
-    # Admitir también un catálogo anterior guardado como objeto.
-    if isinstance(series_anteriores, dict):
-        series_anteriores = series_anteriores.get("series", [])
-
-    if not isinstance(series_anteriores, list):
-        series_anteriores = []
-
-    cache = {}
-
-    for serie in series_anteriores:
-        if (
-            isinstance(serie, dict)
-            and serie.get("title")
-            and serie.get("tmdb_id")
-        ):
-            cache[norm(serie["title"])] = {
-                "id": serie["tmdb_id"],
-                "name": serie["title"],
-                "_cached": True
-            }
-
-    # Leer los vídeos de la lista de YouTube.
-    items = youtube_items()
-    print("Vídeos encontrados:", len(items))
-
-    grupos = {}
-    videos_vistos = set()
-
-    for item in items:
-        snippet = item.get("snippet", {})
-        detalles = item.get("contentDetails") or {}
-
-        recurso = snippet.get("resourceId") or {}
-        video_id = detalles.get("videoId") or recurso.get("videoId")
-
-        if not video_id or video_id in videos_vistos:
+        if numero is None:
             continue
 
-        videos_vistos.add(video_id)
-
-        titulo_original = (snippet.get("title") or "").strip()
-
-        if titulo_original in ("Deleted video", "Private video"):
-            continue
-
-        coincidencia = PATTERN.match(titulo_original)
-
-        if not coincidencia:
-            print(
-                "Se omite (falta S01E01 en el título):",
-                titulo_original
-            )
-            continue
-
-        nombre = coincidencia.group("name").strip(" -–—:|")
-        temporada = int(coincidencia.group("season"))
-        numero_episodio = int(coincidencia.group("episode"))
-
-        clave = norm(nombre)
-
-        miniaturas = snippet.get("thumbnails") or {}
-        miniatura = (
-            miniaturas.get("high")
-            or miniaturas.get("medium")
-            or miniaturas.get("default")
-            or {}
-        ).get("url", "")
-
-        video = {
-            "video_id": video_id,
-            "youtube_title": titulo_original,
-            "episode_title": (
-                coincidencia.group("epname") or ""
-            ).strip(),
-            "season": temporada,
-            "episode": numero_episodio,
-            "url": "https://www.youtube.com/watch?v=" + video_id,
-            "youtube_thumbnail": miniatura
+        episodios[int(numero)] = {
+            "titulo": episodio.get("name") or "",
+            "sinopsis": episodio.get("overview") or "",
+            "imagen": url_imagen(
+                episodio.get("still_path"),
+                "w780"
+            ),
+            "fecha": episodio.get("air_date") or "",
         }
 
-        if clave not in grupos:
-            grupos[clave] = {
-                "name": nombre,
-                "videos": []
-            }
+    return episodios
 
-        grupos[clave]["videos"].append(video)
 
-    # Construir los dos JSON que utiliza la web.
-    series_out = []
-    episodes_out = {}
+def construir_catalogo(videos, series_anteriores, episodios_anteriores):
+    series_por_nombre = {}
+    episodios_por_serie = {}
 
-    for clave, grupo in grupos.items():
-        nombre = grupo["name"]
-        videos = grupo["videos"]
+    # Indexar las fichas anteriores para conservar IDs y ajustes manuales.
+    anteriores_por_nombre = {}
+    anteriores_por_id = {}
 
-        print("Procesando serie:", nombre)
+    for serie in series_anteriores:
+        nombre = serie.get("title") or ""
+        if nombre:
+            anteriores_por_nombre[normalizar(
+                separar_titulo_y_anio(nombre)[0]
+            )] = serie
 
-        encontrado = tmdb_search(nombre, cache)
-        tmdb_id = encontrado.get("id") if encontrado else None
+        if serie.get("id"):
+            anteriores_por_id[str(serie["id"])] = serie
 
-        if tmdb_id:
-            series_id = str(tmdb_id)
-        else:
-            slug = re.sub(
-                r"[^a-z0-9]+",
-                "-",
-                norm(nombre)
-            ).strip("-")
+    # Agrupar los vídeos por serie, temporada y episodio.
+    for video in videos:
+        analisis = analizar_titulo(video["youtube_title"])
 
-            series_id = "local-" + slug
+        if not analisis:
+            print(
+                "AVISO: título ignorado porque no tiene formato "
+                f"S01E01 o 1x01: {video['youtube_title']}"
+            )
+            continue
 
-        detalle = encontrado or {}
+        nombre_serie = analisis["serie"]
+        nombre_base, anio = separar_titulo_y_anio(nombre_serie)
+        clave_nombre = normalizar(nombre_base)
 
-        # Obtener detalles, imágenes, géneros y logo de TMDB.
-        if tmdb_id:
-            try:
-                detalle = get_json(
-                    f"{TMDB}/tv/{tmdb_id}",
-                    {
-                        "api_key": TMDB_API_KEY,
-                        "language": "es-ES",
-                        "append_to_response": "images"
-                    }
-                )
-            except Exception as error:
-                print(
-                    "Aviso: no se pudieron cargar los detalles TMDB:",
-                    nombre,
-                    error
-                )
-                detalle = encontrado or {}
+        if clave_nombre not in series_por_nombre:
+            anterior = anteriores_por_nombre.get(clave_nombre)
 
-        poster = image_url(
-            detalle.get("poster_path"),
-            "w780"
-        )
-
-        backdrop = image_url(
-            detalle.get("backdrop_path"),
-            "original"
-        )
-
-        logo = ""
-
-        imagenes = detalle.get("images") or {}
-        logos = imagenes.get("logos") or []
-
-        if logos:
-            logos.sort(
-                key=lambda elemento: (
-                    0 if elemento.get("iso_639_1") in ("es", "en", None) else 1,
-                    -(elemento.get("vote_average") or 0)
-                )
+            # Conserva el ID previo cuando existe, evitando cambiar la URL
+            # que usa series.html?id=...
+            tmdb_en_anterior = (
+                anterior.get("tmdb_id") if anterior else None
             )
 
-            logo = image_url(
-                logos[0].get("file_path"),
-                "w780"
+            ficha_tmdb = None
+            detalles = {}
+
+            if TMDB_API_KEY:
+                if tmdb_en_anterior:
+                    detalles = obtener_detalles_serie(tmdb_en_anterior)
+
+                if not detalles:
+                    ficha_tmdb = buscar_serie_tmdb(nombre_serie)
+
+                    if ficha_tmdb:
+                        detalles = obtener_detalles_serie(
+                            ficha_tmdb["id"]
+                        )
+
+            tmdb_id = (
+                detalles.get("id")
+                or (ficha_tmdb or {}).get("id")
+                or tmdb_en_anterior
             )
 
-        generos = [
-            genero.get("name", "")
-            for genero in (detalle.get("genres") or [])
-            if genero.get("name")
-        ]
+            if tmdb_id and not detalles:
+                detalles = obtener_detalles_serie(tmdb_id)
 
-        series_out.append({
-            "id": series_id,
-            "tmdb_id": tmdb_id,
-            "type": "series",
-            "title": (
-                detalle.get("name")
-                or detalle.get("original_name")
-                or nombre
-            ),
-            "poster": poster or videos[0]["youtube_thumbnail"],
-            "backdrop": backdrop,
-            "logo": logo,
-            "overview": detalle.get("overview") or "",
-            "first_air_date": detalle.get("first_air_date") or "",
-            "genres": ", ".join(generos),
-            "vote_average": detalle.get("vote_average") or 0,
-            "youtube_title_example": videos[0]["youtube_title"]
-        })
+            if tmdb_id:
+                serie_id = str(tmdb_id)
+            elif anterior and anterior.get("id"):
+                serie_id = str(anterior["id"])
+            else:
+                serie_id = "local-" + crear_slug(nombre_serie)
 
-        # Agrupar los vídeos por temporada y episodio.
-        temporadas = {}
-
-        for video in videos:
-            numero_temporada = video["season"]
-            numero_episodio = video["episode"]
-
-            temporadas.setdefault(numero_temporada, {})
-
-            temporadas[numero_temporada][numero_episodio] = {
-                "numero": numero_episodio,
-                "titulo": (
-                    video["episode_title"]
-                    or f"Capítulo {numero_episodio}"
+            # Si el ID local anterior se está convirtiendo a un ID TMDB,
+            # se trasladarán también los episodios que hubiera guardados.
+            serie = {
+                "id": serie_id,
+                "tmdb_id": tmdb_id,
+                "type": "series",
+                "title": (
+                    detalles.get("title")
+                    or nombre_serie
                 ),
-                "imagen": video["youtube_thumbnail"],
-                "url": video["url"],
-                "youtube_id": video["video_id"],
-                "youtube_title": video["youtube_title"]
+                "poster": (
+                    detalles.get("poster")
+                    or (anterior or {}).get("poster")
+                    or video["youtube_image"]
+                ),
+                "backdrop": (
+                    detalles.get("backdrop")
+                    or (anterior or {}).get("backdrop")
+                    or ""
+                ),
+                "logo": (
+                    detalles.get("logo")
+                    or (anterior or {}).get("logo")
+                    or ""
+                ),
+                "overview": (
+                    detalles.get("overview")
+                    or (anterior or {}).get("overview")
+                    or ""
+                ),
+                "first_air_date": (
+                    detalles.get("first_air_date")
+                    or (anterior or {}).get("first_air_date")
+                    or (str(anio) if anio else "")
+                ),
+                "genres": (
+                    detalles.get("genres")
+                    or (anterior or {}).get("genres")
+                    or ""
+                ),
+                "vote_average": (
+                    detalles.get("vote_average")
+                    or (anterior or {}).get("vote_average")
+                    or 0
+                ),
+                "age_rating": (
+                    (anterior or {}).get("age_rating") or ""
+                ),
+                "youtube_title_example": video["youtube_title"],
             }
 
-        # Completar los datos de los episodios con TMDB.
-        if tmdb_id:
-            for numero_temporada in sorted(temporadas):
-                try:
-                    datos_temporada = get_json(
-                        f"{TMDB}/tv/{tmdb_id}/season/{numero_temporada}",
-                        {
-                            "api_key": TMDB_API_KEY,
-                            "language": "es-ES"
-                        }
-                    )
+            # Mantiene las imágenes y datos editados manualmente si existen.
+            if anterior:
+                for campo in (
+                    "title_manual",
+                    "poster_manual",
+                    "backdrop_manual",
+                    "logo_manual",
+                    "overview_manual",
+                    "quality_manual",
+                    "age_rating_manual",
+                    "youtube_url_manual",
+                ):
+                    if anterior.get(campo):
+                        serie[campo] = anterior[campo]
 
-                    episodios_tmdb = {
-                        int(episodio["episode_number"]): episodio
-                        for episodio in datos_temporada.get("episodes", [])
-                        if episodio.get("episode_number") is not None
+            if tmdb_id and TMDB_API_KEY:
+                clasificacion = obtener_clasificacion_edad(tmdb_id)
+                if clasificacion:
+                    serie["age_rating"] = clasificacion
+
+            series_por_nombre[clave_nombre] = serie
+            episodios_por_serie[serie_id] = {}
+
+            # Recupera episodios previos si el ID de la serie ha cambiado.
+            if anterior:
+                id_anterior = str(anterior.get("id", ""))
+                guardados = episodios_anteriores.get(id_anterior, [])
+
+                for temporada_guardada in guardados:
+                    numero_temp = temporada_guardada.get("numero")
+                    if numero_temp is None:
+                        continue
+
+                    episodios_por_serie[serie_id][int(numero_temp)] = {
+                        int(ep.get("numero", 0)): ep
+                        for ep in temporada_guardada.get("capitulos", [])
+                        if ep.get("numero") is not None
                     }
 
-                    for numero_episodio, episodio in temporadas[
-                        numero_temporada
-                    ].items():
-                        episodio_tmdb = episodios_tmdb.get(numero_episodio)
+            print(
+                f"Serie: {serie['title']} | "
+                f"ID: {serie_id} | TMDB: {tmdb_id or 'sin coincidencia'}"
+            )
 
-                        if episodio_tmdb:
-                            episodio["titulo"] = (
-                                episodio_tmdb.get("name")
-                                or episodio["titulo"]
-                            )
+        serie = series_por_nombre[clave_nombre]
+        serie_id = serie["id"]
 
-                            episodio["descripcion"] = (
-                                episodio_tmdb.get("overview") or ""
-                            )
+        temporada = analisis["temporada"]
+        numero_ep = analisis["episodio"]
 
-                            episodio["imagen"] = (
-                                image_url(
-                                    episodio_tmdb.get("still_path"),
-                                    "w780"
-                                )
-                                or episodio["imagen"]
-                            )
+        if temporada not in episodios_por_serie[serie_id]:
+            episodios_por_serie[serie_id][temporada] = {}
 
-                except Exception as error:
-                    print(
-                        f"Aviso: no se pudieron consultar los episodios "
-                        f"de la temporada {numero_temporada} de {nombre}: "
-                        f"{error}"
-                    )
+        episodio_anterior = (
+            episodios_por_serie[serie_id][temporada].get(numero_ep, {})
+        )
 
-        # Formato que utiliza series.html:
-        # [{ "numero": 1, "capitulos": [...] }]
-        temporadas_out = []
+        # La información del título y del enlace de YouTube manda sobre TMDB.
+        # Así puedes cambiar el vídeo sin depender del nombre del episodio.
+        titulo_youtube = analisis["titulo_episodio"]
+        titulo_tmdb = ""
+        sinopsis_tmdb = ""
+        imagen_tmdb = ""
+
+        tmdb_id = serie.get("tmdb_id")
+        if tmdb_id and TMDB_API_KEY:
+            temporada_tmdb = obtener_datos_temporada(
+                tmdb_id,
+                temporada
+            )
+            info_ep = temporada_tmdb.get(numero_ep, {})
+            titulo_tmdb = info_ep.get("titulo", "")
+            sinopsis_tmdb = info_ep.get("sinopsis", "")
+            imagen_tmdb = info_ep.get("imagen", "")
+
+        # Si el nombre del episodio de YouTube está presente, se conserva.
+        # Si no, utiliza el de TMDB y luego el anterior.
+        titulo_final = (
+            titulo_youtube
+            or titulo_tmdb
+            or episodio_anterior.get("titulo")
+            or f"Episodio {numero_ep}"
+        )
+
+        episodio = {
+            "numero": numero_ep,
+            "titulo": titulo_final,
+            "imagen": (
+                video["youtube_image"]
+                or imagen_tmdb
+                or episodio_anterior.get("imagen", "")
+            ),
+            "url": video["youtube_url"],
+            "youtube_id": video["youtube_id"],
+            "youtube_title": video["youtube_title"],
+            "sinopsis": (
+                sinopsis_tmdb
+                or episodio_anterior.get("sinopsis", "")
+            ),
+        }
+
+        if imagen_tmdb and not video.get("youtube_image"):
+            episodio["imagen"] = imagen_tmdb
+
+        episodios_por_serie[serie_id][temporada][numero_ep] = episodio
+
+    # Convertir el catálogo interno al formato que espera series.html.
+    lista_series = list(series_por_nombre.values())
+    salida_episodios = {}
+
+    for serie in lista_series:
+        serie_id = serie["id"]
+        temporadas = episodios_por_serie.get(serie_id, {})
+        lista_temporadas = []
 
         for numero_temporada in sorted(temporadas):
             capitulos = [
-                temporadas[numero_temporada][numero]
-                for numero in sorted(temporadas[numero_temporada])
+                temporadas[numero_temporada][numero_ep]
+                for numero_ep in sorted(temporadas[numero_temporada])
             ]
 
-            temporadas_out.append({
+            lista_temporadas.append({
                 "numero": numero_temporada,
-                "capitulos": capitulos
+                "capitulos": capitulos,
             })
 
-        episodes_out[series_id] = temporadas_out
+        salida_episodios[serie_id] = lista_temporadas
 
-    # Orden alfabético de las series.
-    series_out.sort(
-        key=lambda serie: serie["title"].casefold()
+    return lista_series, salida_episodios
+
+
+# ============================================================
+# EJECUCION PRINCIPAL
+# ============================================================
+
+def main():
+    if not YOUTUBE_API_KEY:
+        raise RuntimeError(
+            "No está configurada la clave YOUTUBE_API_KEY."
+        )
+
+    series_anteriores = leer_json(ARCHIVO_SERIES, [])
+    episodios_anteriores = leer_json(ARCHIVO_EPISODIOS, {})
+
+    # Acepta solo el formato de catálogo que utiliza este proyecto.
+    if not isinstance(series_anteriores, list):
+        series_anteriores = []
+
+    if not isinstance(episodios_anteriores, dict):
+        episodios_anteriores = {}
+
+    videos = obtener_videos_playlist()
+
+    if not videos:
+        print(
+            "No se han encontrado vídeos. "
+            "Se mantienen los catálogos existentes para evitar borrarlos."
+        )
+        return
+
+    series, episodios = construir_catalogo(
+        videos,
+        series_anteriores,
+        episodios_anteriores
     )
 
-    # Guardar archivos como JSON directamente, sin envoltorios,
-    # para mantener la compatibilidad con la plantilla HTML.
-    guardar_json("series.json", series_out)
-    guardar_json("episodios.json", episodes_out)
+    if not series:
+        print(
+            "No se detectaron títulos con formato de episodio. "
+            "No se sobrescriben los catálogos."
+        )
+        return
 
-    total_capitulos = contar_episodios(episodes_out)
+    guardar_json(ARCHIVO_SERIES, series)
+    guardar_json(ARCHIVO_EPISODIOS, episodios)
+
+    total_episodios = sum(
+        len(temporada.get("capitulos", []))
+        for temporadas in episodios.values()
+        for temporada in temporadas
+    )
 
     print("----------------------------------------")
-    print("Actualización terminada correctamente.")
-    print("Series generadas:", len(series_out))
-    print("Capítulos encontrados:", total_capitulos)
+    print("ACTUALIZACION DE SHARKTV COMPLETADA")
+    print(f"Series encontradas: {len(series)}")
+    print(f"Episodios procesados: {total_episodios}")
+    print(f"Archivo generado: {ARCHIVO_SERIES.name}")
+    print(f"Archivo generado: {ARCHIVO_EPISODIOS.name}")
     print("----------------------------------------")
 
 
 if __name__ == "__main__":
-    main()
-
+    try:
+        main()
+    except Exception as error:
+        print(f"ERROR EN LA ACTUALIZACION: {error}")
+        raise
