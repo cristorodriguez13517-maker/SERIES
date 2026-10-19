@@ -1,5 +1,5 @@
 {
-  "local-los-dinosaurios-2026": [
+  "313298": [
     {
       "numero": 1,
       "capitulos": [
@@ -9,7 +9,8 @@
           "imagen": "https://i.ytimg.com/vi/uoEfIVVSWVg/hqdefault.jpg",
           "url": "https://www.youtube.com/watch?v=uoEfIVVSWVg",
           "youtube_id": "uoEfIVVSWVg",
-          "youtube_title": "Los dinosaurios (2026) S01E01 - Ascenso"
+          "youtube_title": "Los dinosaurios (2026) S01E01 - Ascenso",
+          "sinopsis": "Hace 235 millones de años, nace una pequeña criatura que dará origen a una dinastía de dinosaurios... si logra sobrevivir al clima caótico y a los reptiles carnívoros."
         },
         {
           "numero": 2,
@@ -17,7 +18,8 @@
           "imagen": "https://i.ytimg.com/vi/PqVT3XdHHhM/hqdefault.jpg",
           "url": "https://www.youtube.com/watch?v=PqVT3XdHHhM",
           "youtube_id": "PqVT3XdHHhM",
-          "youtube_title": "Los dinosaurios (2026) S01E2 - Expansíon"
+          "youtube_title": "Los dinosaurios (2026) S01E2 - Expansíon",
+          "sinopsis": "Una ígnea extinción masiva acaba con un rival y permite a los dinosaurios multiplicarse, crecer, y desarrollar cuellos más largos y corazas naturales para defenderse."
         },
         {
           "numero": 3,
@@ -25,7 +27,8 @@
           "imagen": "https://i.ytimg.com/vi/zukv8IaCRJA/hqdefault.jpg",
           "url": "https://www.youtube.com/watch?v=zukv8IaCRJA",
           "youtube_id": "zukv8IaCRJA",
-          "youtube_title": "Los dinosaurios (2026) S01E03 - Imperio"
+          "youtube_title": "Los dinosaurios (2026) S01E03 - Imperio",
+          "sinopsis": "Tras una dura glaciación, el Cretácico ve aumentar el nivel del mar, y lleva a los pterosaurios a volar a las islas para comer y a los dinosaurios a cazar en los mares."
         },
         {
           "numero": 4,
@@ -33,7 +36,8 @@
           "imagen": "https://i.ytimg.com/vi/aFdVfwICfO0/hqdefault.jpg",
           "url": "https://www.youtube.com/watch?v=aFdVfwICfO0",
           "youtube_id": "aFdVfwICfO0",
-          "youtube_title": "Los dinosaurios (2026) S01E04 - Caída"
+          "youtube_title": "Los dinosaurios (2026) S01E04 - Caída",
+          "sinopsis": "Los dinosaurios dominan el planeta, siendo el tiranosaurio el más letal. Pero mientras continentes se separan y se desplazan, el peligro acecha en la lejanía del espacio."
         }
       ]
     }

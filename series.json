@@ -1,16 +1,17 @@
 [
   {
-    "id": "local-los-dinosaurios-2026",
-    "tmdb_id": null,
+    "id": "313298",
+    "tmdb_id": 313298,
     "type": "series",
-    "title": "Los dinosaurios (2026)",
-    "poster": "https://i.ytimg.com/vi/uoEfIVVSWVg/hqdefault.jpg",
-    "backdrop": "",
-    "logo": "",
-    "overview": "",
-    "first_air_date": "",
-    "genres": "",
-    "vote_average": 0,
+    "title": "Los dinosaurios",
+    "poster": "https://image.tmdb.org/t/p/w780/x37IK9WWhuzi7tgyMT4ff3kiT5X.jpg",
+    "backdrop": "https://image.tmdb.org/t/p/original/8X2R9uLys3SmkRuQAmSI96xxJAF.jpg",
+    "logo": "https://image.tmdb.org/t/p/original/bRGaqK7ZAT5i0hlSxaDNgyiDTyw.png",
+    "overview": "Desde los primeros dinosaurios hasta los últimos, esta gloriosa serie documental examina sus 165 millones de años en la Tierra y las fuerzas que moldearon su evolución.",
+    "first_air_date": "2026-03-06",
+    "genres": "Documental, Animación",
+    "vote_average": 8.0,
+    "age_rating": "7",
     "youtube_title_example": "Los dinosaurios (2026) S01E01 - Ascenso"
   }
 ]
