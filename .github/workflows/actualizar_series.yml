@@ -1,12 +1,18 @@
+
 name: Actualizar series SharkTV
 
 on:
   workflow_dispatch:
+
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "*/30 * * * *"
 
 permissions:
   contents: write
+
+concurrency:
+  group: actualizar-series-sharktv
+  cancel-in-progress: false
 
 jobs:
   actualizar-series:
@@ -33,14 +39,16 @@ jobs:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           YOUTUBE_SERIES_PLAYLIST_ID: PLAeNuSpPHAsk
 
-      - name: Guardar cambios en el repositorio
+      - name: Guardar cambios en GitHub
         run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add series.json episodios.json
+
+          if git diff --cached --quiet; then
+            echo "El catálogo no ha cambiado."
+          else
             git commit -m "Actualizar catálogo de series"
             git push
-          else
-            echo "No hay cambios que guardar."
           fi
