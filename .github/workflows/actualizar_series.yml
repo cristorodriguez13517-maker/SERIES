@@ -1,0 +1,46 @@
+name: Actualizar series SharkTV
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar-series:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Consultar YouTube y TMDB
+        run: python actualizar_series.py
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          YOUTUBE_SERIES_PLAYLIST_ID: PLAeNuSpPHAsk
+
+      - name: Guardar cambios en el repositorio
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "Actualizar catálogo de series"
+            git push
+          else
+            echo "No hay cambios que guardar."
+          fi
