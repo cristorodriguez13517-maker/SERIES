@@ -1,1 +1,58 @@
-{}
+{
+  "actualizado": "2026-10-19T03:29:19.310654+00:00",
+  "total_episodios": 4,
+  "episodios": [
+    {
+      "id": "uoEfIVVSWVg",
+      "serie_id": "tmdb-313298",
+      "tmdb_id": 313298,
+      "serie": "Los dinosaurios",
+      "temporada": 1,
+      "episodio": 1,
+      "titulo": "Ascenso",
+      "titulo_youtube": "Los dinosaurios (2026) S01E01 - Ascenso",
+      "youtube_url": "https://www.youtube.com/watch?v=uoEfIVVSWVg",
+      "video_id": "uoEfIVVSWVg",
+      "fecha_publicacion": "2026-03-21T09:05:10Z"
+    },
+    {
+      "id": "PqVT3XdHHhM",
+      "serie_id": "tmdb-313298",
+      "tmdb_id": 313298,
+      "serie": "Los dinosaurios",
+      "temporada": 1,
+      "episodio": 2,
+      "titulo": "Expansíon",
+      "titulo_youtube": "Los dinosaurios (2026) S01E2 - Expansíon",
+      "youtube_url": "https://www.youtube.com/watch?v=PqVT3XdHHhM",
+      "video_id": "PqVT3XdHHhM",
+      "fecha_publicacion": "2026-03-21T09:06:08Z"
+    },
+    {
+      "id": "zukv8IaCRJA",
+      "serie_id": "tmdb-313298",
+      "tmdb_id": 313298,
+      "serie": "Los dinosaurios",
+      "temporada": 1,
+      "episodio": 3,
+      "titulo": "Imperio",
+      "titulo_youtube": "Los dinosaurios (2026) S01E03 - Imperio",
+      "youtube_url": "https://www.youtube.com/watch?v=zukv8IaCRJA",
+      "video_id": "zukv8IaCRJA",
+      "fecha_publicacion": "2026-03-21T09:16:26Z"
+    },
+    {
+      "id": "aFdVfwICfO0",
+      "serie_id": "tmdb-313298",
+      "tmdb_id": 313298,
+      "serie": "Los dinosaurios",
+      "temporada": 1,
+      "episodio": 4,
+      "titulo": "Caída",
+      "titulo_youtube": "Los dinosaurios (2026) S01E04 - Caída",
+      "youtube_url": "https://www.youtube.com/watch?v=aFdVfwICfO0",
+      "video_id": "aFdVfwICfO0",
+      "fecha_publicacion": "2026-03-21T10:27:29Z"
+    }
+  ]
+}

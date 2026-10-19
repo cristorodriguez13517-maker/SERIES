@@ -1,1 +1,38 @@
-[]
+{
+  "actualizado": "2026-10-19T03:29:19.310632+00:00",
+  "total_series": 1,
+  "series": [
+    {
+      "tmdb_id": 313298,
+      "titulo": "Los dinosaurios",
+      "titulo_original": "The Dinosaurs",
+      "sinopsis": "Desde los primeros dinosaurios hasta los últimos, esta gloriosa serie documental examina sus 165 millones de años en la Tierra y las fuerzas que moldearon su evolución.",
+      "poster": "https://image.tmdb.org/t/p/w500/x37IK9WWhuzi7tgyMT4ff3kiT5X.jpg",
+      "fondo": "https://image.tmdb.org/t/p/original/8X2R9uLys3SmkRuQAmSI96xxJAF.jpg",
+      "fecha_estreno": "2026-03-06",
+      "generos": [
+        "Documental",
+        "Animación"
+      ],
+      "temporadas_tmdb": [
+        {
+          "numero": 1,
+          "nombre": "Temporada 1",
+          "sinopsis": "",
+          "poster": "https://image.tmdb.org/t/p/w500/rX4a1I1bvEoPIHKU9PCDMJjSZfS.jpg",
+          "episodios": 4
+        }
+      ],
+      "valoracion": 8.0,
+      "numero_temporadas_tmdb": 1,
+      "numero_episodios_tmdb": 4,
+      "id": "tmdb-313298",
+      "nombre_detectado": "Los dinosaurios",
+      "anio_detectado": 2026,
+      "episodios_youtube": 4,
+      "temporadas_disponibles": [
+        1
+      ]
+    }
+  ]
+}
