@@ -103,10 +103,18 @@ def peticion_json(url, params=None, intentos=3):
             )
 
             if respuesta.status_code == 429:
-                espera = int(respuesta.headers.get("Retry-After", "3"))
-                print(f"Limite de solicitudes. Esperando {espera} s...")
-                time.sleep(max(espera, 2))
-                continue
+                # No dejar que una respuesta del servidor bloquee el workflow
+                # durante minutos: reintenta con una espera limitada.
+                try:
+                    espera = int(respuesta.headers.get("Retry-After", "3"))
+                except (TypeError, ValueError):
+                    espera = 3
+                espera = min(max(espera, 2), 8)
+                print(f"Límite de solicitudes (429). Reintento en {espera} s...")
+                if intento < intentos - 1:
+                    time.sleep(espera)
+                    continue
+                return {}
 
             respuesta.raise_for_status()
             return respuesta.json()
@@ -377,6 +385,9 @@ def buscar_serie_tmdb(nombre_youtube):
         if clave == normalizar(clave_alias):
             nombres_busqueda.extend(alias)
 
+    # Si el título incluye año, la búsqueda por nombre base + año suele bastar;
+    # evitamos repetir consultas idénticas innecesarias.
+
     # También intenta el título completo cuando lleva año.
     if anio:
         nombres_busqueda.append(f"{nombre_base} {anio}")
@@ -415,7 +426,6 @@ def buscar_serie_tmdb(nombre_youtube):
                     candidato["_puntuacion"] = puntuacion
                     candidatos_por_id[candidato_id] = candidato
 
-            time.sleep(0.15)
 
     if not candidatos_por_id:
         print(
@@ -593,6 +603,8 @@ def obtener_datos_temporada(tmdb_id, numero_temporada):
 def construir_catalogo(videos, series_anteriores, episodios_anteriores):
     series_por_nombre = {}
     episodios_por_serie = {}
+    # Caché: una sola petición a TMDB por serie/temporada, no una por episodio.
+    temporadas_tmdb_cache = {}
 
     # Indexar las fichas anteriores para conservar IDs y ajustes manuales.
     anteriores_por_nombre = {}
@@ -780,10 +792,17 @@ def construir_catalogo(videos, series_anteriores, episodios_anteriores):
 
         tmdb_id = serie.get("tmdb_id")
         if tmdb_id and TMDB_API_KEY:
-            temporada_tmdb = obtener_datos_temporada(
-                tmdb_id,
-                temporada
-            )
+            clave_temporada = (str(tmdb_id), int(temporada))
+            if clave_temporada not in temporadas_tmdb_cache:
+                print(
+                    f"TMDB: consultando temporada {temporada} "
+                    f"de la serie {serie.get('title', serie_id)}..."
+                )
+                temporadas_tmdb_cache[clave_temporada] = obtener_datos_temporada(
+                    tmdb_id,
+                    temporada
+                )
+            temporada_tmdb = temporadas_tmdb_cache[clave_temporada]
             info_ep = temporada_tmdb.get(numero_ep, {})
             titulo_tmdb = info_ep.get("titulo", "")
             sinopsis_tmdb = info_ep.get("sinopsis", "")
@@ -865,6 +884,9 @@ def main():
     if not isinstance(episodios_anteriores, dict):
         episodios_anteriores = {}
 
+    print("Iniciando actualizador de series SharkTV...")
+    print(f"Playlist de YouTube: {PLAYLIST_ID}")
+    print(f"Clave TMDB configurada: {'sí' if TMDB_API_KEY else 'no'}")
     videos = obtener_videos_playlist()
 
     if not videos:
