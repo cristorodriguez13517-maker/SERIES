@@ -15,7 +15,7 @@ function updateSelected(){
     const item=(episodesBySeason[currentSeasonIndex]||[])[currentEpisodeIndex];
     const ep=(episodeRecords[currentSeasonIndex]||[])[currentEpisodeIndex];
 
-    if(ep)actualizarFicha(ep,currentEpisodeIndex);
+    if(ep){clearTimeout(sharkEpisodeInfoTimer);sharkEpisodeInfoTimer=setTimeout(()=>{if((episodeRecords[currentSeasonIndex]||[])[currentEpisodeIndex]===ep)actualizarFicha(ep,currentEpisodeIndex)},90);}
 
     if(item){
         if(selectedEpisodeItem!==item){
