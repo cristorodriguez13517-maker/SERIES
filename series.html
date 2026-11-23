@@ -59,5 +59,48 @@ function updateSelected(){
 }
 function seleccionarPrimero(){currentEpisodeIndex=0;updateSelected()}
 function openCurrent(){const item=(episodesBySeason[currentSeasonIndex]||[])[currentEpisodeIndex];if(item&&item.href&&item.getAttribute('href')!=='#')window.open(item.href,'_blank','noopener')}
-document.addEventListener('keydown',e=>{const k=e.key,c=e.keyCode||e.which,up=k==='ArrowUp'||c===38||c===19,down=k==='ArrowDown'||c===40||c===20,left=k==='ArrowLeft'||c===37||c===21,right=k==='ArrowRight'||c===39||c===22,enter=k==='Enter'||c===13||c===23||c===66,back=k==='Escape'||c===27||c===4;const active=document.activeElement;if(back){e.preventDefault();location.href='index.html';return}if(!seasonRows.length)return;if(enter){if(active&&active.classList.contains('episode-thumb'))return;e.preventDefault();openCurrent();return}if(right||left){const arr=episodesBySeason[currentSeasonIndex]||[];if(!arr.length)return;e.preventDefault();currentEpisodeIndex=Math.max(0,Math.min(arr.length-1,currentEpisodeIndex+(right?1:-1)));updateSelected()}else if(down||up){if(seasonRows.length<2)return;e.preventDefault();const next=Math.max(0,Math.min(seasonRows.length-1,currentSeasonIndex+(down?1:-1)));if(next!==currentSeasonIndex){mostrarTemporada(next);seleccionarPrimero()}}},true);iniciar();
+document.addEventListener('keydown',e=>{
+    const k=e.key,c=e.keyCode||e.which;
+    const up=k==='ArrowUp'||c===38||c===19;
+    const down=k==='ArrowDown'||c===40||c===20;
+    const left=k==='ArrowLeft'||c===37||c===21;
+    const right=k==='ArrowRight'||c===39||c===22;
+    const enter=k==='Enter'||c===13||c===23||c===66;
+    const back=k==='Escape'||c===27||c===4;
+    const active=document.activeElement;
+    const activeEpisode=active&&active.closest?active.closest('.episode-thumb'):null;
+
+    if(back){e.preventDefault();location.href='index.html';return}
+    if(!seasonRows.length)return;
+
+    if(enter){
+        if(activeEpisode)return;
+        e.preventDefault();
+        openCurrent();
+        return;
+    }
+
+    if(left||right){
+        const activeSeason=activeEpisode?Number(activeEpisode.dataset.season):currentSeasonIndex;
+        const activeIndex=activeEpisode?Number(activeEpisode.dataset.episode):currentEpisodeIndex;
+        const arr=episodesBySeason[activeSeason]||[];
+        if(!arr.length)return;
+        e.preventDefault();
+        currentSeasonIndex=activeSeason;
+        currentEpisodeIndex=Math.max(0,Math.min(arr.length-1,activeIndex+(right?1:-1)));
+        updateSelected();
+        return;
+    }
+
+    if(up||down){
+        if(seasonRows.length<2)return;
+        e.preventDefault();
+        const activeSeason=activeEpisode?Number(activeEpisode.dataset.season):currentSeasonIndex;
+        const next=Math.max(0,Math.min(seasonRows.length-1,activeSeason+(down?1:-1)));
+        if(next!==currentSeasonIndex||activeSeason!==currentSeasonIndex){
+            mostrarTemporada(next);
+            seleccionarPrimero();
+        }
+    }
+},true);iniciar();
 </script></body></html>
