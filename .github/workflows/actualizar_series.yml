@@ -29,7 +29,7 @@ jobs:
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install requests pillow
 
       - name: Actualizar series
         run: python actualizar_series.py
