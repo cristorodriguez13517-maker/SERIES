@@ -781,7 +781,6 @@ def construir_catalogo(videos, series_anteriores, episodios_anteriores):
                 ),
                 "logo": (
                     (anterior or {}).get("logo_manual")
-                    or (anterior or {}).get("logo")
                     or detalles.get("logo")
                     or ""
                 ),
