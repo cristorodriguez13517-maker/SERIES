@@ -5,6 +5,8 @@ import json
 import time
 import unicodedata
 import requests
+from io import BytesIO
+from PIL import Image
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
@@ -503,12 +505,55 @@ def buscar_serie_tmdb(nombre_youtube):
     return mejor
 
 
+from io import BytesIO
+from PIL import Image
+
+
+def clasificar_logo_tmdb(logo):
+    """Devuelve si el logo tiene color y su luminosidad media."""
+    try:
+        url = IMAGE_BASE + "w185" + logo["file_path"]
+        respuesta = requests.get(url, timeout=12)
+        respuesta.raise_for_status()
+        imagen_logo = Image.open(BytesIO(respuesta.content)).convert("RGBA")
+        imagen_logo.thumbnail((64, 64))
+        pixeles = list(imagen_logo.getdata())
+        visibles = [p for p in pixeles if p[3] > 32]
+        if not visibles:
+            return True, 255
+        coloreados = sum(1 for r, g, b, a in visibles if max(r, g, b) - min(r, g, b) > 22)
+        luminosidad = sum(0.2126*r + 0.7152*g + 0.0722*b for r, g, b, a in visibles) / len(visibles)
+        return (coloreados / len(visibles) >= 0.02), luminosidad
+    except Exception:
+        # Si no se puede analizar, no descartamos el logo ni lo convertimos.
+        return True, 255
+
+
+def elegir_logo_tmdb(logos):
+    """Color primero; después español, inglés y otros; blanco antes que negro."""
+    idiomas = {"es": 0, "en": 1, None: 2}
+    candidatos = [logo for logo in logos if logo.get("file_path")]
+    if not candidatos:
+        return None
+    clasificados = []
+    for logo in candidatos:
+        tiene_color, luminosidad = clasificar_logo_tmdb(logo)
+        idioma = idiomas.get(logo.get("iso_639_1"), 3)
+        es_monocromo = not tiene_color
+        blanco_primero = 0 if es_monocromo and luminosidad >= 128 else 1
+        clave = (0 if tiene_color else 1, idioma, blanco_primero,
+                 -(logo.get("vote_average") or 0), -(logo.get("width") or 0))
+        clasificados.append((clave, logo))
+    clasificados.sort(key=lambda item: item[0])
+    return clasificados[0][1]
+
+
 def obtener_detalles_serie(tmdb_id):
     parametros = {
         "api_key": TMDB_API_KEY,
         "language": IDIOMA,
         "append_to_response": "images",
-        "include_image_language": "es,en,null",
+        
     }
 
     datos = peticion_json(
@@ -521,25 +566,9 @@ def obtener_detalles_serie(tmdb_id):
 
     imagenes = datos.get("images", {})
 
-    # Selecciona primero logos en español, luego inglés y finalmente otros.
-    logos = imagenes.get("logos", [])
-
-    def clave_logo(logo):
-        idioma = logo.get("iso_639_1")
-        preferencia = {
-            "es": 0,
-            "en": 1,
-            None: 2,
-        }.get(idioma, 3)
-
-        return (
-            preferencia,
-            -(logo.get("vote_average") or 0),
-            -(logo.get("width") or 0)
-        )
-
-    logos = sorted(logos, key=clave_logo)
-    logo_path = logos[0].get("file_path") if logos else ""
+    # Prioriza cualquier logo a color; luego español, inglés y otros.
+    logo_elegido = elegir_logo_tmdb(imagenes.get("logos", []))
+    logo_path = logo_elegido.get("file_path") if logo_elegido else ""
 
     # Usa el fondo de la ficha y, si falta, el de las imágenes adicionales.
     backdrop_path = datos.get("backdrop_path") or ""
