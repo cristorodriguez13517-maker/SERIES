@@ -720,6 +720,7 @@ def obtener_datos_temporada(tmdb_id, numero_temporada):
                 "w780"
             ),
             "fecha": episodio.get("air_date") or "",
+            "duracion": episodio.get("runtime") or 0,
         }
 
     return episodios
@@ -932,6 +933,7 @@ def construir_catalogo(videos, series_anteriores, episodios_anteriores):
         titulo_tmdb = ""
         sinopsis_tmdb = ""
         imagen_tmdb = ""
+        duracion_tmdb = 0
 
         tmdb_id = serie.get("tmdb_id")
         if tmdb_id and TMDB_API_KEY:
@@ -950,6 +952,7 @@ def construir_catalogo(videos, series_anteriores, episodios_anteriores):
             titulo_tmdb = info_ep.get("titulo", "")
             sinopsis_tmdb = info_ep.get("sinopsis", "")
             imagen_tmdb = info_ep.get("imagen", "")
+            duracion_tmdb = info_ep.get("duracion", 0)
 
         # Si el nombre del episodio de YouTube está presente, se conserva.
         # Si no, utiliza el de TMDB y luego el anterior.
@@ -975,6 +978,7 @@ def construir_catalogo(videos, series_anteriores, episodios_anteriores):
                 sinopsis_tmdb
                 or episodio_anterior.get("sinopsis", "")
             ),
+            "duracion": duracion_tmdb or episodio_anterior.get("duracion", 0),
         }
 
         if imagen_tmdb and not video.get("youtube_image"):
