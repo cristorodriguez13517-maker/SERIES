@@ -596,6 +596,7 @@ def obtener_detalles_serie(tmdb_id):
         "api_key": TMDB_API_KEY,
         "language": IDIOMA,
         "append_to_response": "images",
+        "include_image_language": "es,en,null",
         
     }
 
