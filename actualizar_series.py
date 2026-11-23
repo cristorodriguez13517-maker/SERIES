@@ -510,46 +510,55 @@ from PIL import Image
 
 
 def clasificar_logo_tmdb(logo):
-    """Devuelve si el logo tiene color y su luminosidad media."""
+    """Clasifica un logo; si no se puede comprobar, se descarta por seguridad."""
     try:
         url = TMDB_IMAGES + "/" + "w185" + logo["file_path"]
         respuesta = requests.get(url, timeout=12)
         respuesta.raise_for_status()
         imagen_logo = Image.open(BytesIO(respuesta.content)).convert("RGBA")
         imagen_logo.thumbnail((64, 64))
-        pixeles = list(imagen_logo.getdata())
-        visibles = [p for p in pixeles if p[3] > 32]
+        visibles = [p for p in imagen_logo.getdata() if p[3] > 32]
         if not visibles:
-            return True, 255
-        coloreados = sum(1 for r, g, b, a in visibles if max(r, g, b) - min(r, g, b) > 22)
-        luminosidad = sum(0.2126*r + 0.7152*g + 0.0722*b for r, g, b, a in visibles) / len(visibles)
-        return (coloreados / len(visibles) >= 0.02), luminosidad
+            return False, 0
+        coloreados = sum(
+            1 for r, g, b, a in visibles
+            if max(r, g, b) - min(r, g, b) > 22
+        )
+        luminosidad = sum(
+            0.2126*r + 0.7152*g + 0.0722*b
+            for r, g, b, a in visibles
+        ) / len(visibles)
+        tiene_color = (coloreados / len(visibles)) >= 0.02
+        return tiene_color, luminosidad
     except Exception:
-        # Si no se puede analizar, no descartamos el logo ni lo convertimos.
-        return True, 255
+        # Nunca tratar un logo no analizado como si fuera de color.
+        return False, 0
 
 
 def elegir_logo_tmdb(logos):
-    """Color primero; después español, inglés y otros; blanco antes que negro."""
-    # TMDB normalmente devuelve iso_639_1 ("es", "en", etc.), sin región.
-    # Si en el futuro devuelve variantes regionales, se respeta es-ES > es-MX.
+    """Color primero; si no hay color, solo monocromos blancos (nunca negros)."""
     idiomas = {"es-es": 0, "es-mx": 1, "es": 0, "en": 2, None: 3}
-    candidatos = [logo for logo in logos if logo.get("file_path")]
-    if not candidatos:
-        return None
     clasificados = []
-    for logo in candidatos:
+    for logo in logos:
+        if not logo.get("file_path"):
+            continue
         tiene_color, luminosidad = clasificar_logo_tmdb(logo)
-        codigo_idioma = str(logo.get("iso_639_1") or "").replace("_", "-").lower()
-        idioma = idiomas.get(codigo_idioma, 4)
-        es_monocromo = not tiene_color
-        blanco_primero = 0 if es_monocromo and luminosidad >= 128 else 1
-        clave = (0 if tiene_color else 1, blanco_primero if es_monocromo else 0, idioma,
-                 -(logo.get("vote_average") or 0), -(logo.get("width") or 0))
+        # Los monocromos oscuros y los que no se pudieron analizar se descartan.
+        if not tiene_color and luminosidad < 128:
+            continue
+        codigo = str(logo.get("iso_639_1") or "").replace("_", "-").lower()
+        idioma = idiomas.get(codigo, 4)
+        clave = (
+            0 if tiene_color else 1,
+            idioma,
+            -(logo.get("vote_average") or 0),
+            -(logo.get("width") or 0),
+        )
         clasificados.append((clave, logo))
+    if not clasificados:
+        return None
     clasificados.sort(key=lambda item: item[0])
     return clasificados[0][1]
-
 
 def obtener_detalles_serie(tmdb_id):
     parametros = {
@@ -609,7 +618,7 @@ def obtener_detalles_serie(tmdb_id):
         "title": datos.get("name") or datos.get("original_name") or "",
         "poster": url_imagen(poster_path, "w780"),
         "backdrop": url_imagen(backdrop_path, "original"),
-        "logo": url_imagen(logo_path, "original"),
+        "logo": url_imagen(logo_path, "w780"),
         "overview": datos.get("overview") or "",
         "first_air_date": datos.get("first_air_date") or "",
         "genres": ", ".join(generos),
