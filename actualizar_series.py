@@ -26,7 +26,7 @@ PLAYLIST_ID = os.getenv(
 
 YOUTUBE_API = "https://www.googleapis.com/youtube/v3"
 TMDB_API = "https://api.themoviedb.org/3"
-TMDB_IMAGES = "https://image.tmdb.org/t/p"
+TMDB_IMAGES = "https://image.tmdb.org/t/p/"
 
 ARCHIVO_SERIES = BASE_DIR / "series.json"
 ARCHIVO_EPISODIOS = BASE_DIR / "episodios.json"
@@ -96,7 +96,7 @@ def crear_slug(texto):
 def url_imagen(ruta, tamano="original"):
     if not ruta:
         return ""
-    return f"{TMDB_IMAGES}/{tamano}{ruta}"
+    return f"{TMDB_IMAGES}{tamano}{ruta}"
 
 
 def peticion_json(url, params=None, intentos=3):
@@ -513,7 +513,7 @@ from PIL import Image
 def clasificar_logo_tmdb(logo):
     """Clasifica un logo; si no se puede comprobar, se descarta por seguridad."""
     try:
-        url = TMDB_IMAGES + "/" + "w185" + logo["file_path"]
+        url = TMDB_IMAGES + "w185" + logo["file_path"]
         respuesta = requests.get(url, timeout=12)
         respuesta.raise_for_status()
         imagen_logo = Image.open(BytesIO(respuesta.content)).convert("RGBA")
