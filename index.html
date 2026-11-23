@@ -83,6 +83,34 @@
    border-color:#e50914!important;
  }
  
+
+/* FONDO CINEMATOGRÁFICO DETRÁS DE LA PRIMERA FILA */
+.content{
+  position:relative;
+  isolation:isolate;
+}
+.content::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  pointer-events:none;
+  left:-24px;
+  right:-24px;
+  top:-190px;
+  height:410px;
+  background-image:linear-gradient(to bottom,rgba(0,0,0,.28) 0%,rgba(0,0,0,.52) 48%,#000 100%),var(--shark-row-banner);
+  background-size:cover;
+  background-position:center 35%;
+  filter:blur(15px);
+  opacity:.78;
+  transform:scale(1.035);
+}
+.content>.movie-row,
+.content>#series-grid,
+.content>.status{
+  position:relative;
+  z-index:1;
+}
 </style></head><body>
 <div class="search-container"><button id="search-button" class="search-button" type="button" aria-label="Abrir buscador" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C8.01 14 6 11.99 6 9.5S8.01 5 10.5 5 15 7.01 15 9.5 12.99 14 10.5 14z"/></svg></button><input id="search" class="search-input" type="text" placeholder="Buscar película o serie..." aria-label="Buscar películas y series" autocomplete="off" tabindex="0"></div>
 <div class="header" id="header"><div class="header-info" id="info"><h1 id="title"></h1><div id="meta" class="details"></div><p id="overview" class="overview"></p></div></div>
@@ -131,7 +159,19 @@ function selectMovie(card){
     },320);
 }
 
+function actualizarFondoFila(banner){
+    const zona=document.querySelector('.content');
+    if(!zona)return;
+    if(banner){
+        const segura=String(banner).replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+        zona.style.setProperty('--shark-row-banner','url("'+segura+'")');
+    }else{
+        zona.style.removeProperty('--shark-row-banner');
+    }
+}
+
 function renderMovieHeader(card){
+    actualizarFondoFila(card.dataset.banner);
     const b=card.dataset.banner;header.style.backgroundImage=b?'url("'+b+'")':'none';const t=card.dataset.title||'Título';titleElement.replaceChildren();if(card.dataset.logo){const img=document.createElement('img');configurarLogoBanner(img,card.dataset.logo);img.alt=t;img.onerror=()=>{titleElement.replaceChildren();titleElement.textContent=t};titleElement.appendChild(img)}else titleElement.textContent=t;const parts=[];if(card.dataset.year)parts.push(card.dataset.year);if(card.dataset.kind==='series'&&card.dataset.seasons){const s=String(card.dataset.seasons);parts.push(/temporada/i.test(s)?s:(s+' '+(Number(s)===1?'Temporada':'Temporadas')))}if(card.dataset.duration)parts.push(card.dataset.duration);if(card.dataset.genres)parts.push(card.dataset.genres);if(card.dataset.quality)parts.push(card.dataset.quality);if(card.dataset.age)parts.push(/\+$/.test(card.dataset.age)?card.dataset.age:(card.dataset.age+'+'));metaElement.textContent=parts.join(' | ');overviewElement.textContent=card.dataset.overview||'';info.classList.add('visible')
 }
 
