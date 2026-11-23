@@ -72,6 +72,36 @@
 <div class="header" id="header"><div class="header-info" id="info"><h1 id="title"></h1><div id="meta" class="details"></div><p id="overview" class="overview"></p></div></div>
 <div class="content"><div class="movie-row" id="movie-row"></div><p class="status" id="status" hidden></p></div>
 <script>
+/* LOGOS DE BANNER: conservar el color original; los logos oscuros monocromos se muestran en blanco. */
+function configurarLogoBanner(img, url){
+  img.crossOrigin='anonymous';
+  img.onload=()=>{
+    try{
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.min(img.naturalWidth,160);
+      canvas.height=Math.max(1,Math.round(img.naturalHeight*canvas.width/img.naturalWidth));
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+      let total=0, luminance=0, saturation=0;
+      for(let p=0;p<pixels.length;p+=4){
+        if(pixels[p+3]<32)continue;
+        const r=pixels[p],g=pixels[p+1],b=pixels[p+2];
+        const hi=Math.max(r,g,b),lo=Math.min(r,g,b);
+        luminance+=(r*.2126+g*.7152+b*.0722);
+        saturation+=(hi===0?0:(hi-lo)/hi);
+        total++;
+      }
+      const dark=total>0 && luminance/total<115 && saturation/total<.18;
+      img.style.filter=dark?'brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,.45))':'drop-shadow(0 1px 2px rgba(0,0,0,.45))';
+    }catch(error){
+      img.style.filter='brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,.45))';
+    }
+  };
+  img.onerror=()=>{img.style.filter='brightness(0) invert(1)'};
+  img.src=url;
+}
+
 'use strict';
 const header=document.getElementById('header'),info=document.getElementById('info'),titleElement=document.getElementById('title'),metaElement=document.getElementById('meta'),overviewElement=document.getElementById('overview'),searchInput=document.getElementById('search'),searchButton=document.getElementById('search-button'),movieRow=document.getElementById('movie-row'),statusElement=document.getElementById('status');
 let items=[],selectedMovie=null,sharkVisibleCards=[],sharkLastFocusedRow=-1;
@@ -96,7 +126,7 @@ function selectMovie(card){
 }
 
 function renderMovieHeader(card){
-    const b=card.dataset.banner;header.style.backgroundImage=b?'url("'+b+'")':'none';const t=card.dataset.title||'Título';titleElement.replaceChildren();if(card.dataset.logo){const img=document.createElement('img');img.src=card.dataset.logo;img.alt=t;img.onerror=()=>{titleElement.replaceChildren();titleElement.textContent=t};titleElement.appendChild(img)}else titleElement.textContent=t;const parts=[];if(card.dataset.year)parts.push(card.dataset.year);if(card.dataset.kind==='series'&&card.dataset.seasons){const s=String(card.dataset.seasons);parts.push(/temporada/i.test(s)?s:(s+' '+(Number(s)===1?'Temporada':'Temporadas')))}if(card.dataset.duration)parts.push(card.dataset.duration);if(card.dataset.genres)parts.push(card.dataset.genres);if(card.dataset.quality)parts.push(card.dataset.quality);if(card.dataset.age)parts.push(/\+$/.test(card.dataset.age)?card.dataset.age:(card.dataset.age+'+'));metaElement.textContent=parts.join(' | ');overviewElement.textContent=card.dataset.overview||'';info.classList.add('visible')
+    const b=card.dataset.banner;header.style.backgroundImage=b?'url("'+b+'")':'none';const t=card.dataset.title||'Título';titleElement.replaceChildren();if(card.dataset.logo){const img=document.createElement('img');configurarLogoBanner(img,card.dataset.logo);img.alt=t;img.onerror=()=>{titleElement.replaceChildren();titleElement.textContent=t};titleElement.appendChild(img)}else titleElement.textContent=t;const parts=[];if(card.dataset.year)parts.push(card.dataset.year);if(card.dataset.kind==='series'&&card.dataset.seasons){const s=String(card.dataset.seasons);parts.push(/temporada/i.test(s)?s:(s+' '+(Number(s)===1?'Temporada':'Temporadas')))}if(card.dataset.duration)parts.push(card.dataset.duration);if(card.dataset.genres)parts.push(card.dataset.genres);if(card.dataset.quality)parts.push(card.dataset.quality);if(card.dataset.age)parts.push(/\+$/.test(card.dataset.age)?card.dataset.age:(card.dataset.age+'+'));metaElement.textContent=parts.join(' | ');overviewElement.textContent=card.dataset.overview||'';info.classList.add('visible')
 }
 
 function visibleCards(){return sharkVisibleCards};function columns(){if(innerWidth<=600)return 3;if(innerWidth<=900)return 5;return 7}function scrollToCard(c){if(!c)return;const r=c.getBoundingClientRect(),top=325,bottom=innerHeight-12;if(r.top<top)scrollBy(0,r.top-top);else if(r.bottom>bottom)scrollBy(0,r.bottom-bottom)}function focusCard(c){if(c){const i=sharkVisibleCards.indexOf(c),row=i<0?-1:Math.floor(i/columns());c.focus({preventScroll:true});selectMovie(c);if(row!==sharkLastFocusedRow){sharkLastFocusedRow=row;scrollToCard(c)}}}function firstCard(){const c=visibleCards()[0];if(c)focusCard(c)}function openSearch(){searchInput.classList.add('active');searchInput.focus()}function closeSearch(){searchInput.value='';filterItems();searchInput.classList.remove('active');searchInput.blur();searchButton.focus({preventScroll:true})}
