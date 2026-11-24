@@ -97,4 +97,13 @@ document.addEventListener('keydown',e=>{
         }
     }
 },true);iniciar();
-</script></body></html>
+</script>
+<style id="sharktv-mobile-show-all-seasons">
+/* En móvil vertical se muestran todas las temporadas, no solo la seleccionada */
+@media screen and (max-width:600px) and (orientation:portrait){
+  .season-row{display:block!important;visibility:visible!important;}
+  .season-title{display:block!important;}
+  .episodes-list{display:flex!important;visibility:visible!important;}
+}
+</style>
+</body></html>
