@@ -165,6 +165,9 @@ document.addEventListener('keydown',e=>{
  .season-row{margin-bottom:25px!important;}
  .episodes-list{width:100%!important;max-width:100%!important;overflow-x:auto!important;overscroll-behavior-x:contain;}
 }
+
+/* La página SERIES tiene un contenedor interior para la ficha; evitar aplicar dos veces el desplazamiento vertical. */
+.header-info-container>.header-info{position:relative!important;top:auto!important;left:auto!important;right:auto!important;transform:none!important;width:100%!important;max-height:100%!important;}
 </style>
 
 </body></html>
