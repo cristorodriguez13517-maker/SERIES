@@ -212,7 +212,7 @@ function renderMovieHeader(card){
     const b=card.dataset.banner;header.style.backgroundImage=b?'url("'+b+'")':'none';const t=card.dataset.title||'Título';titleElement.replaceChildren();if(card.dataset.logo){const img=document.createElement('img');configurarLogoBanner(img,card.dataset.logo);img.alt=t;img.onerror=()=>{titleElement.replaceChildren();titleElement.textContent=t};titleElement.appendChild(img)}else titleElement.textContent=t;const parts=[];if(card.dataset.year)parts.push(card.dataset.year);if(card.dataset.kind==='series'&&card.dataset.seasons){const s=String(card.dataset.seasons);parts.push(/temporada/i.test(s)?s:(s+' '+(Number(s)===1?'Temporada':'Temporadas')))}if(card.dataset.duration)parts.push(card.dataset.duration);if(card.dataset.genres)parts.push(card.dataset.genres);if(card.dataset.quality)parts.push(card.dataset.quality);if(card.dataset.age)parts.push(/\+$/.test(card.dataset.age)?card.dataset.age:(card.dataset.age+'+'));metaElement.textContent=parts.join(' | ');overviewElement.textContent=card.dataset.overview||'';info.classList.add('visible')
 }
 
-function visibleCards(){return sharkVisibleCards};function columns(){if(innerWidth<=600)return 3;if(innerWidth<=900)return 5;return 7}function focusCard(c){if(c){c.focus({preventScroll:true});selectMovie(c)}}function firstCard(){const c=visibleCards()[0];if(c)focusCard(c)}function openSearch(){movieRow.querySelectorAll('.movie.selected').forEach(card=>card.classList.remove('selected'));selectedMovie=null;searchInput.classList.add('active');searchInput.focus()}function closeSearch(){searchInput.value='';filterItems();searchInput.classList.remove('active');searchInput.blur();searchButton.focus({preventScroll:true})}
+function visibleCards(){return sharkVisibleCards};function columns(){if(window.innerWidth<=600)return 3;if(window.innerWidth<=1100)return 8;return 6}function focusCard(c){if(c){c.focus({preventScroll:true});selectMovie(c)}}function firstCard(){const c=visibleCards()[0];if(c)focusCard(c)}function openSearch(){movieRow.querySelectorAll('.movie.selected').forEach(card=>card.classList.remove('selected'));selectedMovie=null;searchInput.classList.add('active');searchInput.focus()}function closeSearch(){searchInput.value='';filterItems();searchInput.classList.remove('active');searchInput.blur();searchButton.focus({preventScroll:true})}
 document.addEventListener('keydown',e=>{const k=e.key,c=e.keyCode||e.which,up=k==='ArrowUp'||c===38||c===19,down=k==='ArrowDown'||c===40||c===20,left=k==='ArrowLeft'||c===37||c===21,right=k==='ArrowRight'||c===39||c===22,enter=k==='Enter'||c===13||c===23||c===66,esc=k==='Escape'||c===27||c===4,a=document.activeElement,isInput=a===searchInput,isButton=a===searchButton,card=a&&a.closest?a.closest('.movie'):null;if(isInput){if(esc){e.preventDefault();closeSearch()}else if(up){e.preventDefault();searchButton.focus()}else if(down){e.preventDefault();firstCard()}else if(enter){e.preventDefault();firstCard()}return}if(isButton){if(enter){e.preventDefault();openSearch();return}if(down){e.preventDefault();firstCard();return}if(up||left||right){e.preventDefault();return}}if(!card){if(up||left){e.preventDefault();searchButton.focus()}else if(down||right){e.preventDefault();firstCard()}return}const arr=visibleCards(),i=arr.indexOf(card);if(i<0)return;let n=i;if(right)n=Math.min(i+1,arr.length-1);else if(left)n=i%columns()===0?i:i-1;else if(down)n=Math.min(i+columns(),arr.length-1);else if(up){if(i<columns()){e.preventDefault();searchButton.focus();return}n=i-columns()}else if(esc){e.preventDefault();searchButton.focus();return}else return;e.preventDefault();if(arr[n])focusCard(arr[n])},true);
 searchButton.addEventListener('click',openSearch);searchInput.addEventListener('input',filterItems);searchInput.addEventListener('blur',()=>{if(!searchInput.value.trim())searchInput.classList.remove('active')});function normalizarTextoBusqueda(valor) {
     return String(valor || '')
@@ -278,4 +278,20 @@ startSharkTV();
 }
 .movie-row::-webkit-scrollbar{display:none!important}
 .movie-row{transform:translateY(-8px)!important}
+</style>
+
+<style>
+/* TV: 6 carátulas. Tablet: 8 carátulas. Móvil conserva 3. */
+.movie-row{grid-template-columns:repeat(6,130px)!important;gap:8px!important}
+.movie-row .movie{width:130px!important;min-width:130px!important;max-width:130px!important}
+@media (min-width:601px) and (max-width:1100px){
+ .movie-row{grid-template-columns:repeat(8,minmax(0,1fr))!important;gap:8px!important}
+ .movie-row .movie{width:100%!important;min-width:0!important;max-width:none!important;height:180px!important}
+ .movie-row .movie img{width:100%!important;height:180px!important;object-fit:cover!important}
+}
+@media(max-width:600px){
+ .movie-row{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+ .movie-row .movie{width:100%!important;min-width:0!important;max-width:130px!important;height:auto!important;aspect-ratio:2/3!important}
+ .movie-row .movie img{width:100%!important;height:100%!important}
+}
 </style>
