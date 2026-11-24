@@ -36,7 +36,7 @@ function actualizarFicha(ep,index){const season=Number((seasonRows[currentSeason
 function crearTemporada(temporada,index){const row=document.createElement('div');row.className='season-row';row.dataset.seasonNumber=temporada.numero;const title=document.createElement('div');title.className='season-title';title.textContent='Temporada '+temporada.numero;const list=document.createElement('div');list.className='episodes-list';const eps=(temporada.capitulos||[]).slice().sort((a,b)=>Number(a.numero)-Number(b.numero));eps.forEach((ep,epIndex)=>{const item=document.createElement('a');item.className='episode-thumb';item.href='#';item.tabIndex=0;item.dataset.season=String(index);item.dataset.episode=String(epIndex);const img=document.createElement('img');img.loading='lazy';img.alt='';img.src=ep.imagen||'';img.onerror=()=>{img.style.visibility='hidden'};item.append(img);const duration=ep.duracion??ep.duration??ep.runtime??ep.duracion_minutos??null;if(duration!==null&&duration!==undefined&&duration!==''){const badge=document.createElement('span');badge.className='episode-duration';const minutes=Number(duration);badge.textContent=Number.isFinite(minutes)&&minutes>0?(minutes>=60?Math.floor(minutes/60)+' h '+String(minutes%60).padStart(2,'0')+' min':Math.round(minutes)+' min'):String(duration);item.append(badge)}item.addEventListener('focus',()=>{currentSeasonIndex=index;currentEpisodeIndex=epIndex;updateSelected()});item.addEventListener('click',e=>{e.preventDefault();currentSeasonIndex=index;currentEpisodeIndex=epIndex;updateSelected();openCurrent()});list.appendChild(item)});row.append(title,list);container.appendChild(row);seasonRows.push(row);episodesBySeason.push([...list.querySelectorAll('.episode-thumb')]);episodeRecords.push(eps)}
 function mostrarTemporada(index){
     if(index<0||index>=seasonRows.length)return;
-    const showAllOnPhone=window.matchMedia('(max-width:600px) and (orientation:portrait)').matches;
+    const showAllOnPhone=window.matchMedia('(orientation:portrait)').matches;
     seasonRows.forEach((row,i)=>{
         row.style.setProperty('display',showAllOnPhone?'block':(i===index?'block':'none'),'important');
         row.style.setProperty('visibility','visible','important');
@@ -110,8 +110,8 @@ document.addEventListener('keydown',e=>{
 </script>
 <style id="sharktv-mobile-show-all-seasons">
 /* En móvil vertical se muestran todas las temporadas, no solo la seleccionada */
-@media screen and (max-width:600px) and (orientation:portrait){
-  .season-row{display:block!important;visibility:visible!important;}
+@media screen and (orientation:portrait){
+  #series-container .season-row{display:block!important;visibility:visible!important;}
   .season-title{display:block!important;}
   .episodes-list{display:flex!important;visibility:visible!important;}
 }
