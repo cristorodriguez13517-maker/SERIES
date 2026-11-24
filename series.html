@@ -192,7 +192,7 @@ document.addEventListener('keydown',e=>{
    return;
   }
   const synopsis=getSynopsis();if(!synopsis)return;
-  const boundary=synopsis.getBoundingClientRect().top,hideBefore=100;
+  const boundary=synopsis.getBoundingClientRect().top,hideBefore=200;
   cards.forEach(card=>{
    const visible=card.getBoundingClientRect().bottom>boundary+hideBefore?1:0;
    card.style.setProperty('transition','none');
