@@ -249,7 +249,7 @@ async function startSharkTV(){
   await loadCatalog();
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const first=visibleCards()[0];
-    if(first){focusCard(first);first.classList.add('shark-no-initial-frame');}
+    if(first)renderMovieHeader(first);
   }));
 }
 startSharkTV();
