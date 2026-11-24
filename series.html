@@ -44,6 +44,10 @@ function mostrarTemporada(index){
     currentSeasonIndex=index;
     currentEpisodeIndex=0;
     updateSelected();
+    const activeSeason=seasonRows[index];
+    if(activeSeason){
+        activeSeason.scrollIntoView({block:'nearest',inline:'nearest',behavior:showAllOnPhone?'smooth':'auto'});
+    }
 }
 function updateSelected(){
     const item=(episodesBySeason[currentSeasonIndex]||[])[currentEpisodeIndex];
@@ -116,4 +120,51 @@ document.addEventListener('keydown',e=>{
   .episodes-list{display:flex!important;visibility:visible!important;}
 }
 </style>
+
+<style id="sharktv-series-banner-and-season-navigation-like-peliculas">
+/* Cabecera fija como en PELICULAS: el banner queda de fondo y el catálogo pasa por delante. */
+.header{
+  position:fixed!important;top:0!important;left:0!important;right:0!important;
+  width:100%!important;height:520px!important;min-height:520px!important;
+  padding:20px!important;z-index:0!important;overflow:hidden!important;
+  background-color:#000!important;background-position:center center!important;
+  background-size:cover!important;background-repeat:no-repeat!important;
+  align-items:flex-start!important;
+}
+.header::before,.header:before{
+  content:""!important;position:absolute!important;inset:0!important;
+  background:linear-gradient(to right,rgba(0,0,0,.90) 0%,rgba(0,0,0,.55) 35%,transparent 100%),
+  linear-gradient(to bottom,rgba(0,0,0,.12) 42%,rgba(0,0,0,.58) 68%,#000 100%)!important;
+  pointer-events:none!important;z-index:1!important;
+}
+.header-info-container,.header-info,#header-info{
+  position:absolute!important;top:160px!important;left:20px!important;right:20px!important;
+  transform:translateY(-50%)!important;z-index:2!important;width:auto!important;
+  max-width:500px!important;max-height:calc(100% - 24px)!important;
+  overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;
+}
+.header-info img,.header h1 img,#header-info img{
+  display:block!important;width:auto!important;max-width:min(300px,76vw)!important;
+  max-height:80px!important;object-fit:contain!important;object-position:left center!important;
+}
+.content{position:relative!important;z-index:1!important;margin-top:320px!important;}
+@media screen and (max-width:600px){
+ .header{height:430px!important;min-height:430px!important;padding:15px!important;}
+ .header::before,.header:before{
+  background:linear-gradient(to right,rgba(0,0,0,.90) 0%,rgba(0,0,0,.55) 35%,transparent 100%),
+  linear-gradient(to bottom,rgba(0,0,0,.12) 48%,rgba(0,0,0,.58) 74%,#000 100%)!important;
+ }
+ .header-info-container,.header-info,#header-info{top:160px!important;left:15px!important;right:15px!important;}
+ .header-info img,.header h1 img,#header-info img{max-width:min(240px,76vw)!important;max-height:70px!important;}
+ .content{margin-top:320px!important;padding:12px 15px!important;}
+}
+/* En móvil vertical, todas las temporadas quedan en columna y se puede recorrer la página. */
+@media screen and (orientation:portrait) and (pointer:coarse){
+ #series-container .season-row{display:block!important;visibility:visible!important;}
+ #series-container{display:block!important;}
+ .season-row{margin-bottom:25px!important;}
+ .episodes-list{width:100%!important;max-width:100%!important;overflow-x:auto!important;overscroll-behavior-x:contain;}
+}
+</style>
+
 </body></html>
