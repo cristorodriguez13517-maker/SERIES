@@ -170,4 +170,51 @@ document.addEventListener('keydown',e=>{
 .header-info-container>.header-info{position:relative!important;top:auto!important;left:auto!important;right:auto!important;transform:none!important;width:100%!important;max-height:100%!important;}
 </style>
 
+
+<style id="sharktv-mobile-synopsis-card-effect">
+@media screen and (max-width:600px) and (orientation:portrait){
+ .movie-row .movie,.episodes-list .episode-thumb{transition:none!important;}
+}
+</style>
+<script id="sharktv-mobile-synopsis-card-effect-script">
+(function(){
+ const mq=window.matchMedia('(max-width:600px) and (orientation:portrait)');
+ let raf=0,observer=null,resizeObserver=null;
+ function getCards(){return Array.from(document.querySelectorAll('.movie-row > *, .episodes-list > .episode-thumb'));}
+ function getSynopsis(){
+  return document.querySelector('#episode-overview, #overview, .overview, #header-info .synopsis, #header-info .description, #header-info p, #header-info .description-text')||document.querySelector('#header-info');
+ }
+ function update(){
+  raf=0;
+  const cards=getCards();
+  if(!mq.matches){
+   cards.forEach(card=>{card.style.removeProperty('opacity');card.style.removeProperty('transition');card.style.removeProperty('pointer-events');});
+   return;
+  }
+  const synopsis=getSynopsis();if(!synopsis)return;
+  const boundary=synopsis.getBoundingClientRect().top,hideBefore=300;
+  cards.forEach(card=>{
+   const visible=card.getBoundingClientRect().bottom>boundary+hideBefore?1:0;
+   card.style.setProperty('transition','none');
+   card.style.setProperty('opacity',String(visible),'important');
+   card.style.setProperty('pointer-events',visible===0?'none':'auto');
+  });
+ }
+ function request(){if(!raf)raf=requestAnimationFrame(update);}
+ function init(){
+  window.addEventListener('scroll',request,{passive:true,capture:true});
+  document.addEventListener('scroll',request,{passive:true,capture:true});
+  document.addEventListener('touchmove',request,{passive:true});
+  if(window.visualViewport)window.visualViewport.addEventListener('scroll',request,{passive:true});
+  if(observer)observer.disconnect();
+  observer=new MutationObserver(request);observer.observe(document.body,{childList:true,subtree:true,characterData:true});
+  if(window.ResizeObserver){resizeObserver=new ResizeObserver(request);const synopsis=getSynopsis();if(synopsis)resizeObserver.observe(synopsis);}
+  request();
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+ if(mq.addEventListener)mq.addEventListener('change',request);else mq.addListener(request);
+ window.addEventListener('resize',request,{passive:true});
+})();
+</script>
+
 </body></html>
