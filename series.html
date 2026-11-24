@@ -180,7 +180,7 @@ document.addEventListener('keydown',e=>{
 (function(){
  const mq=window.matchMedia('(max-width:600px) and (orientation:portrait)');
  let raf=0,observer=null,resizeObserver=null;
- function getCards(){return Array.from(document.querySelectorAll('.movie-row > *, .episodes-list > .episode-thumb'));}
+ function getCards(){return Array.from(document.querySelectorAll('.movie-row > *, .season-row > .season-title, .episodes-list > .episode-thumb'));}
  function getSynopsis(){
   return document.querySelector('#episode-overview, #overview, .overview, #header-info .synopsis, #header-info .description, #header-info p, #header-info .description-text')||document.querySelector('#header-info');
  }
