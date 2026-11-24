@@ -174,8 +174,28 @@ function youtubeUrl(x){if(x.youtube_url_manual)return x.youtube_url_manual;if(x.
 function yearOf(x){if(x.first_air_date)return String(x.first_air_date).slice(0,4);if(x.release_date)return String(x.release_date).slice(0,4);if(x.year)return String(x.year);return ''}
 function genresOf(x){if(Array.isArray(x.genres))return x.genres.map(g=>typeof g==='string'?g:(g&&g.name)||'').filter(Boolean).join(', ');return typeof x.genres==='string'?x.genres:(x.genre||'')}
 function renderItems(){movieRow.replaceChildren();selectedMovie=null;if(!items.length){statusElement.hidden=false;statusElement.textContent='Todavía no hay películas ni series disponibles.';return}statusElement.hidden=true;items.forEach(item=>{const card=document.createElement('a');card.className='movie';card.tabIndex=0;card.dataset.kind=item._kind;card.dataset.id=item.id||item.tmdb_id||'';card.dataset.title=titleOf(item);card.dataset.logo=item.logo_manual||item.logo||'';card.dataset.banner=item.backdrop_manual||item.backdrop||'';card.dataset.overview=item.overview||'';card.dataset.year=yearOf(item);card.dataset.genres=genresOf(item);card.dataset.quality=item.quality_manual||item.quality||'';card.dataset.age=item.age_rating_manual||item.age_rating||'';const detectedSeasons=(item._episodes||[]).length;card.dataset.seasons=item.seasons_manual||item.seasons||item.season_count||detectedSeasons||'';card.dataset.duration=item.duration_manual||item.runtime_manual||item.duration||item.runtime||'';if(item._kind==='series'){card.href='series.html?id='+encodeURIComponent(item.id||item.tmdb_id||'');}else{const u=youtubeUrl(item);if(u){card.href=u;card.target='_blank';card.rel='noopener noreferrer'}}const poster=document.createElement('img');poster.alt='';poster.loading='lazy';poster.decoding='async';poster.draggable=false;poster.src=(item.poster_manual||item.poster||'').replace(/\/t\/p\/(?:w\d+|original)\//, '/t/p/w500/');if(!poster.src)poster.style.visibility='hidden';poster.addEventListener('error',()=>poster.style.visibility='hidden');card.appendChild(poster);movieRow.appendChild(card);card.addEventListener('focus',()=>selectMovie(card));card.addEventListener('mouseenter',()=>selectMovie(card));card.addEventListener('click',e=>{if(item._kind==='movie'&&!card.href)e.preventDefault();if(item._kind==='series'&&!card.dataset.id)e.preventDefault()})});filterItems()}
+function updateCatalogViewport(card){
+    const row=card&&card.closest('.movie-row');
+    if(!row)return;
+    const cards=Array.from(row.querySelectorAll('.movie:not([hidden])'));
+    if(!cards.length)return;
+    const first=cards[0];
+    const rowHeight=first.getBoundingClientRect().height;
+    row.style.setProperty('--shark-row-height',rowHeight+'px');
+    row.style.height='var(--shark-row-height)';
+    row.style.maxHeight='var(--shark-row-height)';
+    row.style.overflowY='hidden';
+    row.style.overflowX='visible';
+    const columns=Math.max(1,getComputedStyle(row).gridTemplateColumns.split(' ').filter(Boolean).length);
+    const index=cards.indexOf(card);
+    if(index<0)return;
+    const targetRow=Math.floor(index/columns);
+    const offset=card.getBoundingClientRect().top-first.getBoundingClientRect().top;
+    row.scrollTop+=offset;
+}
 function selectMovie(card){
     if(!card||card.hidden)return;
+    updateCatalogViewport(card);
     if(selectedMovie!==card){
         if(selectedMovie)selectedMovie.classList.remove('selected');
         selectedMovie=card;
@@ -243,4 +263,18 @@ startSharkTV();
 </style>
 <style>
 /* Las carátulas que quedan atrás se desvanecen; reaparecen al retroceder */
+</style>
+
+<style>
+/* Mantener una sola fila de carátulas visible; las flechas verticales cambian la fila dentro del mismo espacio. */
+.movie-row{
+  height:var(--shark-row-height,180px)!important;
+  max-height:var(--shark-row-height,180px)!important;
+  overflow-x:visible!important;
+  overflow-y:hidden!important;
+  align-content:start!important;
+  scroll-behavior:auto!important;
+  scrollbar-width:none!important;
+}
+.movie-row::-webkit-scrollbar{display:none!important}
 </style>
