@@ -242,7 +242,14 @@ document.addEventListener('keydown',e=>{
   save({id:(seriesId||'series')+'|S'+season+'E'+episode,title:(titleNode&&titleNode.textContent)||('T'+season+' E'+episode+' · '+seriesTitle),poster:ep.imagen||'',sourceUrl:ep.url||'',player:'SmartTube',kind:'episode',resumeUrl:location.origin+'/SERIES/series.html?id='+encodeURIComponent(seriesId||'')});
  }
  window.__sharkRecordEpisode=recordEpisode;
- 
+ // Respaldo para clic/táctil en el episodio, además de la tecla OK del mando.
+ document.addEventListener('click',function(event){
+  const item=event.target.closest('.episode-thumb');
+  if(!item)return;
+  const season=Number(item.dataset.season),episode=Number(item.dataset.episode);
+  const ep=(episodeRecords[season]||[])[episode];
+  if(ep)recordEpisode(ep);
+ },true);
  
  })();
 </script>
