@@ -73,7 +73,7 @@ function updateSelected(){
     }
 }
 function seleccionarPrimero(){currentEpisodeIndex=0;updateSelected()}
-function openCurrent(){const ep=(episodeRecords[currentSeasonIndex]||[])[currentEpisodeIndex];if(ep&&ep.url)window.open(ep.url,'_blank','noopener')}
+function openCurrent(){const ep=(episodeRecords[currentSeasonIndex]||[])[currentEpisodeIndex];if(ep&&ep.url){if(window.__sharkRecordEpisode)window.__sharkRecordEpisode(ep);window.open(ep.url,'_blank','noopener')}}
 document.addEventListener('keydown',e=>{
     const k=e.key,c=e.keyCode||e.which;
     const up=k==='ArrowUp'||c===38||c===19;
@@ -217,4 +217,33 @@ document.addEventListener('keydown',e=>{
 })();
 </script>
 
+<script id="SHARKTV_CONTINUE_INTEGRATION_V1">
+(function(){
+ const KEY='sharktv_seguir_viendo_v1',REPO='SERIES';
+ function read(){try{const a=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}}
+ function save(data){
+  try{
+   const list=read(),id=String(data.id||data.sourceUrl||data.title||Date.now());
+   const key=REPO+'|'+id;
+   const item={id:key,title:data.title||'Contenido',poster:data.poster||'',url:data.player==='SmartTube'?(data.sourceUrl||data.resumeUrl||''):(data.resumeUrl||''),sourceUrl:data.sourceUrl||'',player:data.player||'SmartTube',repo:REPO,kind:data.kind||'movie',percent:0,updatedAt:Date.now()};
+   const next=[item,...list.filter(x=>String(x.id)!==key)].slice(0,80);
+   localStorage.setItem(KEY,JSON.stringify(next));
+  }catch(e){console.warn('No se pudo guardar Seguir viendo:',e)}
+ }
+ window.SHARKTVContinue={save};
+ 
+ 
+ function recordEpisode(ep){
+  if(!ep)return;
+  const titleNode=document.getElementById('episode-title');
+  const season=Number((seasonRows[currentSeasonIndex]||{}).dataset?.seasonNumber||currentSeasonIndex+1);
+  const episode=Number(ep.numero||currentEpisodeIndex+1);
+  const seriesTitle=(headerInfo.querySelector('img')&&headerInfo.querySelector('img').alt)||new URLSearchParams(location.search).get('id')||'Serie';
+  save({id:(seriesId||'series')+'|S'+season+'E'+episode,title:(titleNode&&titleNode.textContent)||('T'+season+' E'+episode+' · '+seriesTitle),poster:ep.imagen||'',sourceUrl:ep.url||'',player:'SmartTube',kind:'episode',resumeUrl:location.origin+'/SERIES/series.html?id='+encodeURIComponent(seriesId||'')});
+ }
+ window.__sharkRecordEpisode=recordEpisode;
+ 
+ 
+ })();
+</script>
 </body></html>
