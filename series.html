@@ -73,7 +73,7 @@ function updateSelected(){
     }
 }
 function seleccionarPrimero(){currentEpisodeIndex=0;updateSelected()}
-function openCurrent(){const ep=(episodeRecords[currentSeasonIndex]||[])[currentEpisodeIndex];if(ep&&ep.url){if(window.__sharkRecordEpisode)window.__sharkRecordEpisode(ep);const title=(document.getElementById('episode-title')||{}).textContent||'Episodio';const itemId='SERIES|'+String(seriesId||'series')+'|S'+String(currentSeasonIndex+1)+'E'+String(currentEpisodeIndex+1);location.href='reproductor.html?source='+encodeURIComponent(ep.url)+'&item='+encodeURIComponent(itemId)+'&title='+encodeURIComponent(title)}}
+function openCurrent(){const ep=(episodeRecords[currentSeasonIndex]||[])[currentEpisodeIndex];if(ep&&ep.url){if(window.__sharkRecordEpisode)window.__sharkRecordEpisode(ep);const title=(document.getElementById('episode-title')||{}).textContent||'Episodio';const season=Number((seasonRows[currentSeasonIndex]||{}).dataset?.seasonNumber||currentSeasonIndex+1);const episode=Number(ep.numero||currentEpisodeIndex+1);const itemId='SERIES|'+String(seriesId||'series')+'|S'+season+'E'+episode;location.href='reproductor.html?source='+encodeURIComponent(ep.url)+'&item='+encodeURIComponent(itemId)+'&title='+encodeURIComponent(title)}}
 document.addEventListener('keydown',e=>{
     const k=e.key,c=e.keyCode||e.which;
     const up=k==='ArrowUp'||c===38||c===19;
