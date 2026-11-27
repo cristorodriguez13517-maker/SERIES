@@ -225,7 +225,7 @@ document.addEventListener('keydown',e=>{
   try{
    const list=read(),id=String(data.id||data.sourceUrl||data.title||Date.now());
    const key=REPO+'|'+id;
-   const item={id:key,title:data.title||'Contenido',poster:data.poster||'',url:data.sourceUrl||data.resumeUrl||'',sourceUrl:data.sourceUrl||'',player:data.player||'SmartTube',repo:REPO,kind:data.kind||'movie',percent:0,updatedAt:Date.now()};
+   const item={id:key,title:data.title||'Contenido',poster:data.poster||'',logo:data.logo||'',url:data.sourceUrl||data.resumeUrl||'',sourceUrl:data.sourceUrl||'',player:data.player||'SmartTube',repo:REPO,kind:data.kind||'movie',percent:0,updatedAt:Date.now()};
    const next=[item,...list.filter(x=>String(x.id)!==key)].slice(0,80);
    localStorage.setItem(KEY,JSON.stringify(next));
   }catch(e){console.warn('No se pudo guardar Seguir viendo:',e)}
@@ -239,7 +239,7 @@ document.addEventListener('keydown',e=>{
   const season=Number((seasonRows[currentSeasonIndex]||{}).dataset?.seasonNumber||currentSeasonIndex+1);
   const episode=Number(ep.numero||currentEpisodeIndex+1);
   const seriesTitle=(headerInfo.querySelector('img')&&headerInfo.querySelector('img').alt)||new URLSearchParams(location.search).get('id')||'Serie';
-  save({id:(seriesId||'series')+'|S'+season+'E'+episode,title:(titleNode&&titleNode.textContent)||('T'+season+' E'+episode+' · '+seriesTitle),poster:ep.imagen||'',sourceUrl:ep.url||'',player:'SmartTube',kind:'episode',resumeUrl:location.origin+'/SERIES/series.html?id='+encodeURIComponent(seriesId||'')});
+  save({id:(seriesId||'series')+'|S'+season+'E'+episode,title:(titleNode&&titleNode.textContent)||('T'+season+' E'+episode+' · '+seriesTitle),poster:ep.imagen||'',logo:(headerInfo.querySelector('img')&&headerInfo.querySelector('img').src)||'',sourceUrl:ep.url||'',player:'SmartTube',kind:'episode',resumeUrl:location.origin+'/SERIES/series.html?id='+encodeURIComponent(seriesId||'')});
  }
  window.__sharkRecordEpisode=recordEpisode;
  // Respaldo para clic/táctil en el episodio, además de la tecla OK del mando.
