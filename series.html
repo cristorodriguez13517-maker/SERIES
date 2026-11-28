@@ -273,7 +273,7 @@ document.addEventListener('keydown',e=>{
    videoId=u.searchParams.get('v')||((['shorts','embed','live'].includes(parts[0]))?parts[1]:'');
   }
   if(/Android/i.test(navigator.userAgent)&&videoId){
-   location.href='intent://'+encodeURIComponent(videoId)+'#Intent;scheme=vnd.youtube;package='+PACKAGE+';action=android.intent.action.VIEW;S.browser_fallback_url='+encodeURIComponent(u.href)+';end';
+   location.href='vnd.youtube://'+encodeURIComponent(videoId);
    return;
   }
   const fallback=encodeURIComponent(u.href);
