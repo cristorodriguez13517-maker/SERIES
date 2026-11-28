@@ -96,7 +96,7 @@ document.addEventListener('keydown',e=>{
         const arr=episodesBySeason[currentSeasonIndex]||[];
         if(!arr.length)return;
         e.preventDefault();
-        currentEpisodeIndex=Math.max(0,Math.min(arr.length-1,currentEpisodeIndex+(right?1:-1)));
+        currentEpisodeIndex=(currentEpisodeIndex+(right?1:-1)+arr.length)%arr.length;
         updateSelected();
         return;
     }
