@@ -73,7 +73,8 @@ function updateSelected(){
     }
 }
 function seleccionarPrimero(){currentEpisodeIndex=0;updateSelected()}
-function openCurrent(){const ep=(episodeRecords[currentSeasonIndex]||[])[currentEpisodeIndex];if(ep&&ep.url){if(window.__sharkRecordEpisode)window.__sharkRecordEpisode(ep);window.open(ep.url,'_blank','noopener');}}
+function abrirSmartTube(url){if(!url)return;try{const u=new URL(url,location.href);if(!/^https?:$/.test(u.protocol))throw Error('URL no válida');const intent='intent://'+u.host+u.pathname+u.search+'#Intent;scheme='+u.protocol.slice(0,-1)+';package=com.liskovsoft.smartyoutubetv2.tv;S.browser_fallback_url='+encodeURIComponent(u.href)+';end';if(/Android/i.test(navigator.userAgent))location.href=intent;else window.open(u.href,'_blank','noopener')}catch(err){console.error('No se pudo abrir SmartTube',err)}}
+function openCurrent(){const ep=(episodeRecords[currentSeasonIndex]||[])[currentEpisodeIndex];if(ep&&ep.url){if(window.__sharkRecordEpisode)window.__sharkRecordEpisode(ep);abrirSmartTube(ep.url);}}
 document.addEventListener('keydown',e=>{
     const k=e.key,c=e.keyCode||e.which;
     const up=k==='ArrowUp'||c===38||c===19;
