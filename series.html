@@ -242,7 +242,7 @@ document.addEventListener('keydown',e=>{
   const season=Number((seasonRows[currentSeasonIndex]||{}).dataset?.seasonNumber||currentSeasonIndex+1);
   const episode=Number(ep.numero||currentEpisodeIndex+1);
   const seriesTitle=(headerInfo.querySelector('img')&&headerInfo.querySelector('img').alt)||new URLSearchParams(location.search).get('id')||'Serie';
-  save({id:(seriesId||'series')+'|S'+season+'E'+episode,seriesId:seriesId||'series',title:(titleNode&&titleNode.textContent)||('T'+season+' E'+episode+' · '+seriesTitle),episodeLabel:'T'+season+' · E'+String(episode).padStart(2,'0'),season,episode,poster:ep.imagen||'',logo:(headerInfo.querySelector('img')&&headerInfo.querySelector('img').src)||'',sourceUrl:ep.url||'',player:'MPV',kind:'episode',resumeUrl:location.origin+'/SERIES/series.html?id='+encodeURIComponent(seriesId||'')});
+  save({id:(seriesId||'series')+'|S'+season+'E'+episode,seriesId:seriesId||'series',title:(titleNode&&titleNode.textContent)||('T'+season+' E'+episode+' · '+seriesTitle),episodeLabel:'T'+season+' · E'+String(episode).padStart(2,'0'),season,episode,poster:ep.imagen||'',logo:(headerInfo.querySelector('img')&&headerInfo.querySelector('img').src)||'',sourceUrl:ep.url||'',player:'SmartTube',kind:'episode',resumeUrl:location.origin+'/SERIES/series.html?id='+encodeURIComponent(seriesId||'')});
  }
  window.__sharkRecordEpisode=recordEpisode;
  // Respaldo para clic/táctil en el episodio, además de la tecla OK del mando.
@@ -256,18 +256,18 @@ document.addEventListener('keydown',e=>{
  
  })();
 </script>
-<script id="sharktv-mpv-routing-v1">
+<script id="sharktv-smarttube-routing-v3">
 (()=> {
- const PACKAGE='is.xyz.mpv';
+ const PACKAGE='com.liskovsoft.smartyoutubetv2.tv';
  function youtube(value){
   try{const u=new URL(value,location.href);const h=u.hostname.toLowerCase();return h==='youtube.com'||h.endsWith('.youtube.com')||h==='youtu.be'||h.endsWith('.youtu.be')}
   catch{return false}
  }
- function openMPV(value){
+ function openSmartTube(value){
   const u=new URL(value,location.href);
   if(!/^https?:$/.test(u.protocol))return;
   const fallback=encodeURIComponent(u.href);
-  const intent='intent://'+u.host+u.pathname+u.search+'#Intent;scheme='+u.protocol.slice(0,-1)+';package='+PACKAGE+';type=video/any;S.browser_fallback_url='+fallback+';end';
+  const intent='intent://'+u.host+u.pathname+u.search+'#Intent;scheme='+u.protocol.slice(0,-1)+';package='+PACKAGE+';S.browser_fallback_url='+fallback+';end';
   if(/Android/i.test(navigator.userAgent))location.href=intent;
   else window.open(u.href,'_blank','noopener');
  }
@@ -277,11 +277,11 @@ document.addEventListener('keydown',e=>{
   const url=(card&&(card.dataset.sourceUrl||card.getAttribute('href')))||(anchor&&anchor.href)||'';
   if(!youtube(url))return;
   e.preventDefault();e.stopImmediatePropagation();
-  openMPV(url);
+  openSmartTube(url);
  },true);
  const nativeOpen=window.open;
  window.open=function(url,...args){
-  if(youtube(url)){openMPV(url);return null}
+  if(youtube(url)){openSmartTube(url);return null}
   return nativeOpen.call(window,url,...args);
  };
 })();
