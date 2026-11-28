@@ -449,8 +449,18 @@ startSharkTV();
  function openSmartTube(value){
   const u=new URL(value,location.href);
   if(!/^https?:$/.test(u.protocol))return;
+  let videoId='';
+  if(u.hostname.toLowerCase()==='youtu.be')videoId=u.pathname.split('/').filter(Boolean)[0]||'';
+  else if(u.hostname.toLowerCase().endsWith('youtube.com')){
+   const parts=u.pathname.split('/').filter(Boolean);
+   videoId=u.searchParams.get('v')||((['shorts','embed','live'].includes(parts[0]))?parts[1]:'');
+  }
+  if(/Android/i.test(navigator.userAgent)&&videoId){
+   location.href='intent://'+encodeURIComponent(videoId)+'#Intent;scheme=vnd.youtube;package='+PACKAGE+';action=android.intent.action.VIEW;S.browser_fallback_url='+encodeURIComponent(u.href)+';end';
+   return;
+  }
   const fallback=encodeURIComponent(u.href);
-  const intent='intent://'+u.host+u.pathname+u.search+'#Intent;scheme='+u.protocol.slice(0,-1)+';package='+PACKAGE+';S.browser_fallback_url='+fallback+';end';
+  const intent='intent://'+u.host+u.pathname+u.search+'#Intent;scheme='+u.protocol.slice(0,-1)+';package='+PACKAGE+';action=android.intent.action.VIEW;S.browser_fallback_url='+fallback+';end';
   if(/Android/i.test(navigator.userAgent))location.href=intent;
   else window.open(u.href,'_blank','noopener');
  }
