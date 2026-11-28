@@ -439,46 +439,6 @@ startSharkTV();
  
  })();
 </script>
-<script id="sharktv-smarttube-routing-v3">
-(()=> {
- const PACKAGE='com.liskovsoft.smartyoutubetv2.tv';
- function youtube(value){
-  try{const u=new URL(value,location.href);const h=u.hostname.toLowerCase();return h==='youtube.com'||h.endsWith('.youtube.com')||h==='youtu.be'||h.endsWith('.youtu.be')}
-  catch{return false}
- }
- function openSmartTube(value){
-  const u=new URL(value,location.href);
-  if(!/^https?:$/.test(u.protocol))return;
-  let videoId='';
-  if(u.hostname.toLowerCase()==='youtu.be')videoId=u.pathname.split('/').filter(Boolean)[0]||'';
-  else if(u.hostname.toLowerCase().endsWith('youtube.com')){
-   const parts=u.pathname.split('/').filter(Boolean);
-   videoId=u.searchParams.get('v')||((['shorts','embed','live'].includes(parts[0]))?parts[1]:'');
-  }
-  if(/Android/i.test(navigator.userAgent)&&videoId){
-   location.href='vnd.youtube://'+encodeURIComponent(videoId);
-   return;
-  }
-  const fallback=encodeURIComponent(u.href);
-  const intent='intent://'+u.host+u.pathname+u.search+'#Intent;scheme='+u.protocol.slice(0,-1)+';package='+PACKAGE+';action=android.intent.action.VIEW;S.browser_fallback_url='+fallback+';end';
-  if(/Android/i.test(navigator.userAgent))location.href=intent;
-  else window.open(u.href,'_blank','noopener');
- }
- document.addEventListener('click',e=>{
-  const card=e.target&&e.target.closest&&e.target.closest('.movie');
-  const anchor=e.target&&e.target.closest&&e.target.closest('a[href]');
-  const url=(card&&(card.dataset.sourceUrl||card.getAttribute('href')))||(anchor&&anchor.href)||'';
-  if(!youtube(url))return;
-  e.preventDefault();e.stopImmediatePropagation();
-  openSmartTube(url);
- },true);
- const nativeOpen=window.open;
- window.open=function(url,...args){
-  if(youtube(url)){openSmartTube(url);return null}
-  return nativeOpen.call(window,url,...args);
- };
-})();
-</script>
 <script id="sharktv-open-catalog-card-from-continue">
 (function(){
  const params=new URLSearchParams(location.search);
