@@ -225,7 +225,7 @@ document.addEventListener('keydown',e=>{
   try{
    const list=read(),id=String(data.id||data.sourceUrl||data.title||Date.now());
    const key=REPO+'|'+id;
-   const item={id:key,title:data.title||'Contenido',poster:data.poster||'',logo:data.logo||'',url:data.sourceUrl||data.resumeUrl||'',sourceUrl:data.sourceUrl||'',player:data.player||'SmartTube',repo:REPO,kind:data.kind||'movie',percent:0,updatedAt:Date.now()};
+   const item={id:key,title:data.title||'Contenido',poster:data.poster||'',logo:data.logo||'',url:data.sourceUrl||data.resumeUrl||'',sourceUrl:data.sourceUrl||'',player:data.player||'SmartTube',repo:REPO,kind:data.kind||'movie',episodeLabel:data.episodeLabel||'',season:data.season??null,episode:data.episode??null,percent:0,updatedAt:Date.now()};
    const next=[item,...list.filter(x=>String(x.id)!==key)].slice(0,80);
    localStorage.setItem(KEY,JSON.stringify(next));
   }catch(e){console.warn('No se pudo guardar Seguir viendo:',e)}
