@@ -224,9 +224,12 @@ document.addEventListener('keydown',e=>{
  function save(data){
   try{
    const list=read(),id=String(data.id||data.sourceUrl||data.title||Date.now());
-   const key=REPO+'|'+id;
-   const item={id:key,title:data.title||'Contenido',poster:data.poster||'',logo:data.logo||'',url:data.sourceUrl||data.resumeUrl||'',sourceUrl:data.sourceUrl||'',player:data.player||'SmartTube',repo:REPO,kind:data.kind||'movie',episodeLabel:data.episodeLabel||'',season:data.season??null,episode:data.episode??null,percent:0,updatedAt:Date.now()};
-   const next=[item,...list.filter(x=>String(x.id)!==key)].slice(0,80);
+   const kind=data.kind||'movie';
+   const rawId=String(data.id||'');
+   const seriesKey=kind==='episode'?String(data.seriesId||rawId.split('|S')[0].split('|')[0]||data.title):'';
+   const key=REPO+'|'+(seriesKey?'SERIES|'+seriesKey:id);
+   const item={id:key,title:data.title||'Contenido',poster:data.poster||'',logo:data.logo||'',url:data.sourceUrl||data.resumeUrl||'',sourceUrl:data.sourceUrl||'',player:data.player||'SmartTube',repo:REPO,kind,episodeLabel:data.episodeLabel||'',season:data.season??null,episode:data.episode??null,magnetId:data.magnetId||'',filePath:data.filePath||'',seriesId:data.seriesId||seriesKey||'',catalogId:data.catalogId||'',percent:0,updatedAt:Date.now()};
+   const next=[item,...list.filter(x=>String(x.id)!==key&&!(seriesKey&&x.repo===REPO&&x.kind==='episode'&&(String(x.seriesId||'')===seriesKey||String(x.id||'').startsWith(REPO+'|'+seriesKey+'|S')||String(x.id||'').startsWith(REPO+'|'+seriesKey+'|'))))].slice(0,80);
    localStorage.setItem(KEY,JSON.stringify(next));
   }catch(e){console.warn('No se pudo guardar Seguir viendo:',e)}
  }
@@ -239,7 +242,7 @@ document.addEventListener('keydown',e=>{
   const season=Number((seasonRows[currentSeasonIndex]||{}).dataset?.seasonNumber||currentSeasonIndex+1);
   const episode=Number(ep.numero||currentEpisodeIndex+1);
   const seriesTitle=(headerInfo.querySelector('img')&&headerInfo.querySelector('img').alt)||new URLSearchParams(location.search).get('id')||'Serie';
-  save({id:(seriesId||'series')+'|S'+season+'E'+episode,title:(titleNode&&titleNode.textContent)||('T'+season+' E'+episode+' · '+seriesTitle),episodeLabel:'T'+season+' · E'+String(episode).padStart(2,'0'),season,episode,poster:ep.imagen||'',logo:(headerInfo.querySelector('img')&&headerInfo.querySelector('img').src)||'',sourceUrl:ep.url||'',player:'SmartTube',kind:'episode',resumeUrl:location.origin+'/SERIES/series.html?id='+encodeURIComponent(seriesId||'')});
+  save({id:(seriesId||'series')+'|S'+season+'E'+episode,seriesId:seriesId||'series',title:(titleNode&&titleNode.textContent)||('T'+season+' E'+episode+' · '+seriesTitle),episodeLabel:'T'+season+' · E'+String(episode).padStart(2,'0'),season,episode,poster:ep.imagen||'',logo:(headerInfo.querySelector('img')&&headerInfo.querySelector('img').src)||'',sourceUrl:ep.url||'',player:'SmartTube',kind:'episode',resumeUrl:location.origin+'/SERIES/series.html?id='+encodeURIComponent(seriesId||'')});
  }
  window.__sharkRecordEpisode=recordEpisode;
  // Respaldo para clic/táctil en el episodio, además de la tecla OK del mando.
